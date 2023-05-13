@@ -50,8 +50,9 @@ ipcMain.on("ipc-s3", async (event, arg) => {
   switch (action) {
     case "list_objects":
       command = new ListObjectsV2Command({
-        Bucket: payload,
+        Bucket: payload.bucket,
         Delimiter: "/",
+        Prefix: payload.prefix,
       });
       try {
         let isTruncated = true;
@@ -82,11 +83,13 @@ ipcMain.on("ipc-s3", async (event, arg) => {
       }
       break;
     case "get_object":
+      console.log("Payload is ", payload);
       command = new GetObjectCommand({
         Bucket: payload.Bucket,
         Key: payload.Key,
       });
       presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      console.log("presignURl ==", presignedUrl);
       mainWindow.webContents.downloadURL(presignedUrl);
       break;
     default:

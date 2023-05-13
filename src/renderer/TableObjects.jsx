@@ -13,23 +13,33 @@ function TableObjects() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
+  const [curPrefix, setCurrPrefix] = useState("");
   window.electron.ipcRenderer.once("ipc-s3", (data) => {
     // eslint-disable-next-line no-console
     console.log("objects", data);
-    const mergeData = [...data.contents, ...data.prefixes];
+    let { contents } = data;
+    if (curPrefix) {
+      contents = contents.filter((x) => x && x.Key !== curPrefix);
+    }
+    const mergeData = [...contents, ...data.prefixes];
     setObjects(mergeData.filter((x) => x));
     setLoading(false);
   });
-  const handleListObjectsByBucket = (BucketName) => {
+  const handleListObjectsByBucket = (BucketName, Prefix = "") => {
+    setCurrPrefix(Prefix);
     window.electron.ipcRenderer.sendMessage("ipc-s3", [
       "list_objects",
-      BucketName,
+      {
+        bucket: BucketName,
+        prefix: Prefix,
+      },
     ]);
   };
 
   useEffect(() => {
     handleListObjectsByBucket(bucket);
   }, [bucket]);
+
   const getObject = (key) => {
     window.electron.ipcRenderer.sendMessage("ipc-s3", [
       "get_object",
@@ -47,25 +57,41 @@ function TableObjects() {
         if (row?.Prefix) {
           return (
             <div>
-              <FolderFilled style={{ fontSize: "125%" }} />
-              <Button type="link">{row?.Prefix}</Button>
+              <FolderFilled />
+              <Button
+                type="link"
+                onClick={() => handleListObjectsByBucket(bucket, row?.Prefix)}
+              >
+                {row?.Prefix.replace(curPrefix, "")}
+              </Button>
             </div>
           );
         }
         return (
           <div>
-            <FileOutlined />
-            <span style={{ marginLeft: 20 }}>{text}</span>
+            <FileOutlined style={{ marginRight: 20 }} />
+            {/* <span>{text.split("/").pop()}</span> */}
+            <span>{text.replace(curPrefix, "")}</span>
           </div>
         );
       },
     },
     {
+      title: "Storage Class",
+      dataIndex: "StorageClass",
+    },
+    {
       title: "Action",
+      fixed: "right",
+      width: 135,
       render: (text, row) => {
         if (!row?.Key) return null;
         return (
-          <Button onClick={() => getObject(row.Key)} size="small">
+          <Button
+            onClick={() => getObject(row.Key)}
+            size="small"
+            disabled={row.StorageClass !== "STANDARD"}
+          >
             <DownloadOutlined />
             download
           </Button>
@@ -84,7 +110,7 @@ function TableObjects() {
       ]}
     >
       <Table
-        rowKey="Name"
+        rowKey={(record) => `${record.Key}_${record.Prefix}`}
         columns={columns}
         dataSource={objects}
         loading={loading}

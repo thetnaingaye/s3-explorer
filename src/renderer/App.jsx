@@ -95,7 +95,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route excat path="/" element={<Hello />} />
-          <Route path="/objects/:bucket" element={<TableObjects />} />
+          <Route path="/objects/:bucket/:prefix?" element={<TableObjects />} />
         </Routes>
       </Router>
     </div>
