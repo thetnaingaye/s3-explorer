@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MemoryRouter as Router, Routes, Route } from "react-router-dom";
 // import icon from '../../assets/icon.svg';
 import "./App.css";
+import { Button, Table } from "antd";
 
 function Hello() {
   const [buckets, setBuckets] = useState([]);
@@ -12,38 +13,53 @@ function Hello() {
     setBuckets(data);
     setLoading(false);
   });
+
+  window.electron.ipcRenderer.once("ipc-s3", (data) => {
+    // eslint-disable-next-line no-console
+    console.log(data);
+  });
+
   const refreshBuckets = () => {
     setLoading(true);
     window.electron.ipcRenderer.sendMessage("ipc-example", "refersh-buckets");
   };
 
+  const handleListObjectsByBucket = (bucket) => {
+    window.electron.ipcRenderer.sendMessage("ipc-s3", ["list_objects", bucket]);
+  };
+
+  const columns = [
+    {
+      title: "Name",
+      dataIndex: "Name",
+      render: (text) => (
+        <Button type="link" onClick={() => handleListObjectsByBucket(text)}>
+          {text}
+        </Button>
+      ),
+    },
+    {
+      title: "CreationDate",
+      dataIndex: "CreationDate",
+      render: (text) => <span>{text.toString()}</span>,
+    },
+  ];
   return (
     <div style={{ padding: 10 }}>
       <h1>S3 Explorer (using aws-sdk and aws-cli)</h1>
       <h2>
         Buckets{" "}
-        <button type="button" onClick={refreshBuckets}>
+        <Button type="primary" onClick={refreshBuckets}>
           Refresh
-        </button>
+        </Button>
       </h2>{" "}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div style={{ maxHeight: "70vh", overflowY: "scroll", width: "100%" }}>
-          <table>
-            <tbody>
-              {buckets.map((item, idx) => (
-                <tr key={item.Name}>
-                  <td>
-                    <span>{idx + 1}</span>
-                  </td>
-                  <td>{item.Name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <Table
+        rowKey="Name"
+        columns={columns}
+        dataSource={buckets}
+        loading={loading}
+        size="middle"
+      />
     </div>
   );
 }

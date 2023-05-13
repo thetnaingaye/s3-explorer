@@ -1,4 +1,4 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
+/* eslint global-require: off, no-console: off, promise/always-return: off,no-await-in-loop: "off" */
 
 /**
  * This module executes inside of electron's main process. You can start
@@ -14,6 +14,11 @@ import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
 import log from "electron-log";
 import AWS from "aws-sdk";
+import {
+  ListBucketsCommand,
+  ListObjectsV2Command,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
 
@@ -24,6 +29,8 @@ AWS.config.getCredentials((err) => {
     console.log("Access key:", AWS.config?.credentials?.accessKeyId);
   }
 });
+
+const s3 = new S3Client({ region: "ap-southeast-1" });
 class AppUpdater {
   constructor() {
     log.transports.file.level = "info";
@@ -32,24 +39,70 @@ class AppUpdater {
   }
 }
 
-let mainWindow: BrowserWindow | null = null;
+let mainWindow = null;
+ipcMain.on("ipc-s3", async (event, arg) => {
+  console.log("arg == ", arg);
+  const [action, payload] = arg;
+  let command;
+  switch (action) {
+    case "list_objects":
+      command = new ListObjectsV2Command({
+        Bucket: payload,
+      });
+      try {
+        let isTruncated = true;
+
+        console.log("Your bucket contains the following objects:\n");
+        let contents = [];
+
+        while (isTruncated) {
+          const { Contents, IsTruncated, NextContinuationToken } =
+            await s3.send(command);
+
+          contents = contents.concat(Contents);
+          isTruncated = IsTruncated;
+          command.input.ContinuationToken = NextContinuationToken;
+        }
+        console.log(contents);
+      } catch (err) {
+        console.error(err);
+      }
+
+      break;
+    default:
+      break;
+  }
+});
 
 ipcMain.on("ipc-example", async (event, arg) => {
-  const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
+  const msgTemplate = (pingPong) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
+  const command = new ListBucketsCommand({});
 
-  const s3 = new AWS.S3({
-    accessKeyId: AWS.config?.credentials?.accessKeyId,
-    secretAccessKey: AWS.config?.credentials?.secretAccessKey,
-  });
-  s3.listBuckets((err, data) => {
-    if (err) {
-      console.log("Error", err);
-    } else {
-      console.log("Success", data.Buckets);
-      event.reply("ipc-example", data.Buckets);
-    }
-  });
+  try {
+    const { Buckets } = await s3.send(command);
+    // console.log(
+    //   `${Owner?.DisplayName} owns ${Buckets?.length} bucket${
+    //     Buckets?.length === 1 ? "" : "s"
+    //   }:`
+    // );
+    // console.log(`${Buckets?.map((b) => ` • ${b.Name}`).join("\n")}`);
+    event.reply("ipc-example", Buckets);
+  } catch (err) {
+    console.error(err);
+  }
+  // const s3 = new AWS.S3({
+  //   accessKeyId: AWS.config?.credentials?.accessKeyId,
+  //   secretAccessKey: AWS.config?.credentials?.secretAccessKey,
+  // });
+  // s3.listBuckets((err, data) => {
+  //   if (err) {
+  //     console.log("Error", err);
+  //   } else {
+  //     console.log("Success", data.Buckets);
+  //     event.reply("ipc-example", data.Buckets);
+  //   }
+  // });
   // const cmd = ChildProcess.spawnSync('aws', ['s3', 'ls'], {
   //   encoding: 'utf-8',
   // });
@@ -92,7 +145,7 @@ const createWindow = async () => {
     ? path.join(process.resourcesPath, "assets")
     : path.join(__dirname, "../../assets");
 
-  const getAssetPath = (...paths: string[]): string => {
+  const getAssetPath = (...paths) => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
