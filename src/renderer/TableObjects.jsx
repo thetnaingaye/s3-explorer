@@ -23,22 +23,28 @@ function TableObjects() {
   useEffect(() => {
     handleListObjectsByBucket(bucket);
   }, [bucket]);
-
+  const getObject = (key) => {
+    window.electron.ipcRenderer.sendMessage("ipc-s3", [
+      "get_object",
+      {
+        Bucket: bucket,
+        Key: key,
+      },
+    ]);
+  };
   const columns = [
     {
       title: "Name",
       dataIndex: "Key",
-      render: (text, row) => (
-        <Button type="link" onClick={() => handleListObjectsByBucket(text)}>
-          {text || row?.Prefix}
-        </Button>
-      ),
+      render: (text, row) => <Button type="link">{text || row?.Prefix}</Button>,
     },
-    // {
-    //   title: "CreationDate",
-    //   dataIndex: "CreationDate",
-    //   render: (text) => <span>{text.toString()}</span>,
-    // },
+    {
+      title: "Action",
+      render: (text, row) => {
+        if (!row?.Key) return null;
+        return <Button onClick={() => getObject(row.Key)}>download</Button>;
+      },
+    },
   ];
   return (
     <div style={{ padding: 10 }}>

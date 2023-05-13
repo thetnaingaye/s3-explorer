@@ -15,10 +15,12 @@ import { autoUpdater } from "electron-updater";
 import log from "electron-log";
 import AWS from "aws-sdk";
 import {
+  GetObjectCommand,
   ListBucketsCommand,
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
 
@@ -44,6 +46,7 @@ ipcMain.on("ipc-s3", async (event, arg) => {
   console.log("arg == ", arg);
   const [action, payload] = arg;
   let command;
+  let presignedUrl;
   switch (action) {
     case "list_objects":
       command = new ListObjectsV2Command({
@@ -77,7 +80,14 @@ ipcMain.on("ipc-s3", async (event, arg) => {
       } catch (err) {
         console.error(err);
       }
-
+      break;
+    case "get_object":
+      command = new GetObjectCommand({
+        Bucket: payload.Bucket,
+        Key: payload.Key,
+      });
+      presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      mainWindow.webContents.downloadURL(presignedUrl);
       break;
     default:
       break;
