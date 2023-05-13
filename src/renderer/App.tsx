@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
+// import icon from '../../assets/icon.svg';
 import './App.css';
 
 function Hello() {
@@ -17,9 +17,8 @@ function Hello() {
         <img width="200" alt="icon" src={icon} />
       </div> */}
       {/* <h1>electron-react-boilerplate</h1> */}
-      <h1>S3 Explorer</h1>
-      <h2>Buckets</h2>
-      <div className="Hello">
+
+      <div>
         {/* <a
           href="https://electron-react-boilerplate.js.org/"
           target="_blank"
@@ -44,7 +43,9 @@ function Hello() {
             Donate
           </button>
         </a> */}
-        <div>
+        <h1>S3 Explorer</h1>
+        <h2>Buckets</h2>
+        <div style={{ maxHeight: '70vh', overflow: 'scroll' }}>
           {buckets.map((item) => (
             <div key={item}>{item}</div>
           ))}
