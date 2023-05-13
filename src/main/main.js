@@ -30,7 +30,7 @@ AWS.config.getCredentials((err) => {
   }
 });
 
-const s3 = new S3Client({ region: "ap-southeast-1" });
+const s3 = new S3Client({});
 class AppUpdater {
   constructor() {
     log.transports.file.level = "info";
@@ -48,22 +48,32 @@ ipcMain.on("ipc-s3", async (event, arg) => {
     case "list_objects":
       command = new ListObjectsV2Command({
         Bucket: payload,
+        Delimiter: "/",
       });
       try {
         let isTruncated = true;
 
-        console.log("Your bucket contains the following objects:\n");
         let contents = [];
+        let prefixes = [];
 
         while (isTruncated) {
-          const { Contents, IsTruncated, NextContinuationToken } =
-            await s3.send(command);
-
+          const {
+            Contents,
+            IsTruncated,
+            NextContinuationToken,
+            CommonPrefixes,
+          } = await s3.send(command);
           contents = contents.concat(Contents);
+          prefixes = prefixes.concat(CommonPrefixes);
           isTruncated = IsTruncated;
           command.input.ContinuationToken = NextContinuationToken;
         }
-        console.log(contents);
+        // console.log(contents);
+        // console.log("Common Prefixes", prefixes);
+        event.reply("ipc-s3", {
+          contents,
+          prefixes,
+        });
       } catch (err) {
         console.error(err);
       }

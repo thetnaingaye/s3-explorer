@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { MemoryRouter as Router, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { MemoryRouter as Router, Routes, Route, Link } from "react-router-dom";
 // import icon from '../../assets/icon.svg';
 import "./App.css";
 import { Button, Table } from "antd";
+import TableObjects from "./TableObjects";
 
 function Hello() {
   const [buckets, setBuckets] = useState([]);
@@ -13,29 +14,31 @@ function Hello() {
     setBuckets(data);
     setLoading(false);
   });
-
-  window.electron.ipcRenderer.once("ipc-s3", (data) => {
-    // eslint-disable-next-line no-console
-    console.log(data);
-  });
-
   const refreshBuckets = () => {
     setLoading(true);
     window.electron.ipcRenderer.sendMessage("ipc-example", "refersh-buckets");
   };
 
-  const handleListObjectsByBucket = (bucket) => {
-    window.electron.ipcRenderer.sendMessage("ipc-s3", ["list_objects", bucket]);
-  };
+  useEffect(() => {
+    refreshBuckets();
+  }, []);
+
+  // const handleListObjectsByBucket = (bucket) => {
+  //   window.electron.ipcRenderer.sendMessage("ipc-s3", ["list_objects", bucket]);
+  // };
 
   const columns = [
     {
       title: "Name",
       dataIndex: "Name",
       render: (text) => (
-        <Button type="link" onClick={() => handleListObjectsByBucket(text)}>
+        <Link
+          to={{
+            pathname: `/objects/${text}`,
+          }}
+        >
           {text}
-        </Button>
+        </Link>
       ),
     },
     {
@@ -68,7 +71,8 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Hello />} />
+        <Route excat path="/" element={<Hello />} />
+        <Route path="/objects/:bucket" element={<TableObjects />} />
       </Routes>
     </Router>
   );
