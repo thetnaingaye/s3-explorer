@@ -219,11 +219,9 @@
       ]
     },
     "linux": {
-      "target": [
-        "AppImage",
+      "target":[
         "rpm"
-      ],
-      "category": "Development"
+      ]
     },
     "directories": {
       "app": "release/app",
