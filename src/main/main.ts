@@ -11,11 +11,19 @@
 import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import ChildProcess from 'child_process';
+// import ChildProcess from 'child_process';
 import log from 'electron-log';
+import AWS from 'aws-sdk';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
+AWS.config.getCredentials((err) => {
+  if (err) console.log(err.stack);
+  // credentials not loaded
+  else {
+    console.log('Access key:', AWS.config?.credentials?.accessKeyId);
+  }
+});
 class AppUpdater {
   constructor() {
     log.transports.file.level = 'info';
@@ -29,11 +37,24 @@ let mainWindow: BrowserWindow | null = null;
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
-  const cmd = ChildProcess.spawnSync('aws', ['s3', 'ls'], {
-    encoding: 'utf-8',
+
+  const s3 = new AWS.S3({
+    accessKeyId: AWS.config?.credentials?.accessKeyId,
+    secretAccessKey: AWS.config?.credentials?.secretAccessKey,
   });
-  console.log('data === ', cmd.stdout);
-  event.reply('ipc-example', cmd.stdout);
+  s3.listBuckets((err, data) => {
+    if (err) {
+      console.log('Error', err);
+    } else {
+      console.log('Success', data.Buckets);
+      event.reply('ipc-example', data.Buckets);
+    }
+  });
+  // const cmd = ChildProcess.spawnSync('aws', ['s3', 'ls'], {
+  //   encoding: 'utf-8',
+  // });
+  // console.log('data === ', cmd.stdout);
+  // event.reply('ipc-example', cmd.stdout);
   // event.reply('ipc-example', msgTemplate('pong'));
 });
 

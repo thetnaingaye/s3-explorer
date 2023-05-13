@@ -6,10 +6,10 @@ import './App.css';
 function Hello() {
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
-  window.electron.ipcRenderer.once('ipc-example', (arg) => {
+  window.electron.ipcRenderer.once('ipc-example', (data) => {
     // eslint-disable-next-line no-console
-    console.log('arg ===', arg);
-    setBuckets(arg?.split('\n'));
+    // setBuckets(arg?.split('\n'));
+    setBuckets(data);
     setLoading(false);
   });
   const refreshBuckets = () => {
@@ -19,7 +19,7 @@ function Hello() {
 
   return (
     <div style={{ padding: 10 }}>
-      <h1>S3 Explorer (using aws cli)</h1>
+      <h1>S3 Explorer (using aws-sdk and aws-cli)</h1>
       <h2>
         Buckets{' '}
         <button type="button" onClick={refreshBuckets}>
@@ -30,9 +30,18 @@ function Hello() {
         <div>Loading...</div>
       ) : (
         <div style={{ maxHeight: '70vh', overflowY: 'scroll', width: '100%' }}>
-          {buckets.map((item) => (
-            <div key={item}>{item}</div>
-          ))}
+          <table>
+            <tbody>
+              {buckets.map((item, idx) => (
+                <tr key={item.Name}>
+                  <td>
+                    <span>{idx + 1}</span>
+                  </td>
+                  <td>{item.Name}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
