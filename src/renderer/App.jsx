@@ -1,13 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MemoryRouter as Router, Routes, Route, Link } from "react-router-dom";
 // import icon from '../../assets/icon.svg';
 import "./App.css";
-import { Button, Card, Table } from "antd";
+import { Button, Card, Table, Input, Space } from "antd";
+import { SyncOutlined, SearchOutlined } from "@ant-design/icons";
 import TableObjects from "./TableObjects";
+import getColumnSearchProps from "./getColumnSearchProps";
 
-function Hello() {
+function Main() {
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
+
   window.electron.ipcRenderer.once("ipc-example", (data) => {
     // eslint-disable-next-line no-console
     // setBuckets(arg?.split('\n'));
@@ -23,14 +26,14 @@ function Hello() {
     refreshBuckets();
   }, []);
 
-  // const handleListObjectsByBucket = (bucket) => {
-  //   window.electron.ipcRenderer.sendMessage("ipc-s3", ["list_objects", bucket]);
-  // };
-
   const columns = [
     {
       title: "Name",
       dataIndex: "Name",
+      sorter: (a, b) => a.Name.localeCompare(b.Name),
+      defaultSortOrder: "ascend",
+      width: "50%",
+      ...getColumnSearchProps("Name"),
       render: (text) => (
         <Link
           to={{
@@ -44,11 +47,13 @@ function Hello() {
     {
       title: "Creation Date",
       dataIndex: "CreationDate",
+      width: "50%",
       render: (text) => (
         <span style={{ color: "grey" }}>{text.toString()}</span>
       ),
     },
   ];
+
   return (
     <Card
       title={
@@ -58,6 +63,7 @@ function Hello() {
       }
       extra={[
         <Button onClick={refreshBuckets} key="refresh">
+          <SyncOutlined spin={loading} />
           Refresh
         </Button>,
       ]}
@@ -94,7 +100,7 @@ export default function App() {
       </div>
       <Router>
         <Routes>
-          <Route excat path="/" element={<Hello />} />
+          <Route excat path="/" element={<Main />} />
           <Route path="/objects/:bucket/:prefix?" element={<TableObjects />} />
         </Routes>
       </Router>

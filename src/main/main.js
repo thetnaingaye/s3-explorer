@@ -80,6 +80,10 @@ ipcMain.on("ipc-s3", async (event, arg) => {
         });
       } catch (err) {
         console.error(err);
+        event.reply("ipc-s3", {
+          contents: [],
+          prefixes: [],
+        });
       }
       break;
     case "get_object":
