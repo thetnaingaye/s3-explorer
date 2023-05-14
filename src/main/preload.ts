@@ -2,7 +2,7 @@
 /* eslint no-unused-vars: off */
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 
-export type Channels = "ipc-example" | "ipc-s3";
+export type Channels = "ipc-s3";
 
 const electronHandler = {
   ipcRenderer: {
@@ -20,6 +20,16 @@ const electronHandler = {
     },
     once(channel: Channels, func: (...args: unknown[]) => void) {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
+    },
+  },
+  aws: {
+    s3: {
+      listObjects: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:listObjects", args),
+      getObject: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:getObject", args),
+      listBuckets: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:listBuckets", args),
     },
   },
 };

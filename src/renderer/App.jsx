@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { MemoryRouter as Router, Routes, Route, Link } from "react-router-dom";
-// import icon from '../../assets/icon.svg';
 import "./App.css";
-import { Button, Card, Table, Input, Space } from "antd";
-import { SyncOutlined, SearchOutlined } from "@ant-design/icons";
+import { Button, Card, Table } from "antd";
+import { SyncOutlined } from "@ant-design/icons";
 import TableObjects from "./TableObjects";
 import getColumnSearchProps from "./getColumnSearchProps";
 
@@ -11,19 +10,15 @@ function Main() {
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  window.electron.ipcRenderer.once("ipc-example", (data) => {
-    // eslint-disable-next-line no-console
-    // setBuckets(arg?.split('\n'));
+  const listBuckets = async () => {
+    setLoading(true);
+    const data = await window.electron.aws.s3.listBuckets();
     setBuckets(data);
     setLoading(false);
-  });
-  const refreshBuckets = () => {
-    setLoading(true);
-    window.electron.ipcRenderer.sendMessage("ipc-example", "refersh-buckets");
   };
 
   useEffect(() => {
-    refreshBuckets();
+    listBuckets();
   }, []);
 
   const columns = [
@@ -62,7 +57,7 @@ function Main() {
         </span>
       }
       extra={[
-        <Button onClick={refreshBuckets} key="refresh">
+        <Button onClick={listBuckets} key="refresh">
           <SyncOutlined spin={loading} />
           Refresh
         </Button>,

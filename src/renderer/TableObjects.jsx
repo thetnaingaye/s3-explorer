@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Card, Divider, Table } from "antd";
+import { Button, Card, Divider, Table, message } from "antd";
 import {
   DownloadOutlined,
   FileOutlined,
@@ -13,50 +13,56 @@ import BreadcrumbKey from "./BreadcrumbKey";
 import getColumnSearchProps from "./getColumnSearchProps";
 
 function TableObjects() {
+  const [messageApi, contextHolder] = message.useMessage();
   const { bucket } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
 
-  window.electron.ipcRenderer.once("ipc-s3", (data) => {
-    // eslint-disable-next-line no-console
-    console.log("objects", data);
-    let { contents } = data;
-    if (curPrefix) {
-      contents = contents.filter((x) => x && x.Key !== curPrefix);
-    }
-    let mergeData = [...contents, ...data.prefixes];
-    mergeData = mergeData.filter((x) => x);
-    mergeData.forEach((item) => {
-      item.Name = item.Key || item.Prefix;
-    });
-    setObjects(mergeData);
-    setLoading(false);
-  });
-
-  const handleListObjectsByBucket = (BucketName, Prefix = "") => {
+  const handleListObjectsByBucket = async (BucketName, Prefix = "") => {
     setLoading(true);
     setCurrPrefix(Prefix);
-    window.electron.ipcRenderer.sendMessage("ipc-s3", [
-      "list_objects",
-      {
-        bucket: BucketName,
-        prefix: Prefix,
-      },
-    ]);
+    try {
+      const data = await window.electron.aws.s3.listObjects([
+        {
+          bucket: BucketName,
+          prefix: Prefix,
+        },
+      ]);
+      let { contents } = data;
+      if (curPrefix) {
+        contents = contents.filter((x) => x && x.Key !== curPrefix);
+      }
+      let mergeData = [...contents, ...data.prefixes];
+      mergeData = mergeData.filter((x) => x);
+      mergeData.forEach((item) => {
+        item.Name = item.Key || item.Prefix;
+      });
+      setObjects(mergeData);
+      setLoading(false);
+    } catch (error) {
+      messageApi.error(error?.message);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     handleListObjectsByBucket(bucket);
   }, [bucket]);
 
-  const getObject = (key) => {
-    window.electron.ipcRenderer.sendMessage("ipc-s3", [
-      "get_object",
+  const getObject = async (key) => {
+    const presignedUrl = await window.electron.aws.s3.getObject([
       {
         Bucket: bucket,
         Key: key,
+      },
+    ]);
+
+    window.electron.ipcRenderer.sendMessage("ipc-s3", [
+      "download_object",
+      {
+        presignedUrl,
       },
     ]);
   };
@@ -141,38 +147,42 @@ function TableObjects() {
       },
     },
   ];
-  return (
-    <Card
-      title={bucket}
-      extra={[
-        <Button key="home" onClick={() => navigate("/")}>
-          <HomeFilled />
-          Home
-        </Button>,
-        <Divider key="d1" type="vertical" />,
-        <Button
-          key="refresh"
-          onClick={() => handleListObjectsByBucket(bucket, curPrefix)}
-        >
-          <SyncOutlined spin={loading} />
-          Refresh
-        </Button>,
-      ]}
-    >
-      <BreadcrumbKey
-        bucket={bucket}
-        s3Prefix={curPrefix}
-        onChange={(prefix) => handleListObjectsByBucket(bucket, prefix)}
-      />
 
-      <Table
-        rowKey={(record) => `${record.Key}_${record.Prefix}`}
-        columns={columns}
-        dataSource={objects}
-        loading={loading}
-        size="small"
-      />
-    </Card>
+  return (
+    <>
+      {contextHolder}
+      <Card
+        title={bucket}
+        extra={[
+          <Button key="home" onClick={() => navigate("/")}>
+            <HomeFilled />
+            Home
+          </Button>,
+          <Divider key="d1" type="vertical" />,
+          <Button
+            key="refresh"
+            onClick={() => handleListObjectsByBucket(bucket, curPrefix)}
+          >
+            <SyncOutlined spin={loading} />
+            Refresh
+          </Button>,
+        ]}
+      >
+        <BreadcrumbKey
+          bucket={bucket}
+          s3Prefix={curPrefix}
+          onChange={(prefix) => handleListObjectsByBucket(bucket, prefix)}
+        />
+
+        <Table
+          rowKey={(record) => `${record.Key}_${record.Prefix}`}
+          columns={columns}
+          dataSource={objects}
+          loading={loading}
+          size="small"
+        />
+      </Card>
+    </>
   );
 }
 

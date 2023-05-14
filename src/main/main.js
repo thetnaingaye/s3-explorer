@@ -14,15 +14,9 @@ import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
 import log from "electron-log";
 import AWS from "aws-sdk";
-import {
-  GetObjectCommand,
-  ListBucketsCommand,
-  ListObjectsV2Command,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
+import s3IPCMainHandler from "./s3";
 
 AWS.config.getCredentials((err) => {
   if (err) console.log(err.stack);
@@ -32,7 +26,6 @@ AWS.config.getCredentials((err) => {
   }
 });
 
-const s3 = new S3Client({});
 class AppUpdater {
   constructor() {
     log.transports.file.level = "info";
@@ -42,100 +35,16 @@ class AppUpdater {
 }
 
 let mainWindow = null;
+
 ipcMain.on("ipc-s3", async (event, arg) => {
-  console.log("arg == ", arg);
   const [action, payload] = arg;
-  let command;
-  let presignedUrl;
   switch (action) {
-    case "list_objects":
-      command = new ListObjectsV2Command({
-        Bucket: payload.bucket,
-        Delimiter: "/",
-        Prefix: payload.prefix,
-      });
-      try {
-        let isTruncated = true;
-
-        let contents = [];
-        let prefixes = [];
-
-        while (isTruncated) {
-          const {
-            Contents,
-            IsTruncated,
-            NextContinuationToken,
-            CommonPrefixes,
-          } = await s3.send(command);
-          contents = contents.concat(Contents);
-          prefixes = prefixes.concat(CommonPrefixes);
-          isTruncated = IsTruncated;
-          command.input.ContinuationToken = NextContinuationToken;
-        }
-        // console.log(contents);
-        // console.log("Common Prefixes", prefixes);
-        event.reply("ipc-s3", {
-          contents,
-          prefixes,
-        });
-      } catch (err) {
-        console.error(err);
-        event.reply("ipc-s3", {
-          contents: [],
-          prefixes: [],
-        });
-      }
-      break;
-    case "get_object":
-      console.log("Payload is ", payload);
-      command = new GetObjectCommand({
-        Bucket: payload.Bucket,
-        Key: payload.Key,
-      });
-      presignedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-      console.log("presignURl ==", presignedUrl);
-      mainWindow.webContents.downloadURL(presignedUrl);
+    case "download_object":
+      mainWindow.webContents.downloadURL(payload.presignedUrl);
       break;
     default:
       break;
   }
-});
-
-ipcMain.on("ipc-example", async (event, arg) => {
-  const msgTemplate = (pingPong) => `IPC test: ${pingPong}`;
-  console.log(msgTemplate(arg));
-  const command = new ListBucketsCommand({});
-
-  try {
-    const { Buckets } = await s3.send(command);
-    // console.log(
-    //   `${Owner?.DisplayName} owns ${Buckets?.length} bucket${
-    //     Buckets?.length === 1 ? "" : "s"
-    //   }:`
-    // );
-    // console.log(`${Buckets?.map((b) => ` • ${b.Name}`).join("\n")}`);
-    event.reply("ipc-example", Buckets);
-  } catch (err) {
-    console.error(err);
-  }
-  // const s3 = new AWS.S3({
-  //   accessKeyId: AWS.config?.credentials?.accessKeyId,
-  //   secretAccessKey: AWS.config?.credentials?.secretAccessKey,
-  // });
-  // s3.listBuckets((err, data) => {
-  //   if (err) {
-  //     console.log("Error", err);
-  //   } else {
-  //     console.log("Success", data.Buckets);
-  //     event.reply("ipc-example", data.Buckets);
-  //   }
-  // });
-  // const cmd = ChildProcess.spawnSync('aws', ['s3', 'ls'], {
-  //   encoding: 'utf-8',
-  // });
-  // console.log('data === ', cmd.stdout);
-  // event.reply('ipc-example', cmd.stdout);
-  // event.reply('ipc-example', msgTemplate('pong'));
 });
 
 if (process.env.NODE_ENV === "production") {
@@ -240,5 +149,6 @@ app
       // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
+    s3IPCMainHandler();
   })
   .catch(console.log);
