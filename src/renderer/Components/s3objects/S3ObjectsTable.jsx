@@ -31,8 +31,8 @@ function S3ObjectsTable() {
         },
       ]);
       let { contents } = data;
-      if (curPrefix) {
-        contents = contents.filter((x) => x && x.Key !== curPrefix);
+      if (Prefix) {
+        contents = contents.filter((x) => x && x.Key !== Prefix);
       }
       let mergeData = [...contents, ...data.prefixes];
       mergeData = mergeData.filter((x) => x);
