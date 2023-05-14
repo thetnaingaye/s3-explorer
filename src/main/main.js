@@ -45,38 +45,38 @@ ipcMain.on("ipc-s3", async (event, arg) => {
   let properties = {};
   switch (action) {
     case "download_object":
-      // mainWindow.webContents.downloadURL(payload.presignedUrl);
-      defaultPath = app.getPath("downloads");
-      defaultFileName = payload.presignedUrl.split("/").pop().split("?")[0];
-      customURL = dialog.showSaveDialogSync({
-        defaultPath: `${defaultPath}/${defaultFileName}`,
-      });
-      if (customURL) {
-        const filePath = customURL.split("/");
-        const filename = `${filePath.pop()}`;
-        const directory = filePath.join("/");
-        properties = { directory, filename };
-        await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
-          ...properties,
-          onProgress: (progress) => {
-            mainWindow.webContents.send("download-progress", [
-              {
-                filename,
-                progress,
-                presignedUrl: payload.presignedUrl,
-              },
-            ]);
-          },
-          onCompleted: (item) => {
-            mainWindow.webContents.send("download-complete", [
-              {
-                filename,
-                item,
-              },
-            ]);
-          },
-        });
-      }
+      mainWindow.webContents.downloadURL(payload.presignedUrl);
+      // defaultPath = app.getPath("downloads");
+      // defaultFileName = payload.presignedUrl.split("/").pop().split("?")[0];
+      // customURL = dialog.showSaveDialogSync({
+      //   defaultPath: `${defaultPath}/${defaultFileName}`,
+      // });
+      // if (customURL) {
+      //   const filePath = customURL.split("/");
+      //   const filename = `${filePath.pop()}`;
+      //   const directory = filePath.join("/");
+      //   properties = { directory, filename };
+      //   await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
+      //     ...properties,
+      //     onProgress: (progress) => {
+      //       mainWindow.webContents.send("download-progress", [
+      //         {
+      //           filename,
+      //           progress,
+      //           presignedUrl: payload.presignedUrl,
+      //         },
+      //       ]);
+      //     },
+      //     onCompleted: (item) => {
+      //       mainWindow.webContents.send("download-complete", [
+      //         {
+      //           filename,
+      //           item,
+      //         },
+      //       ]);
+      //     },
+      //   });
+      // }
       break;
     default:
       break;
