@@ -9,10 +9,11 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from "path";
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, shell, ipcMain, dialog } from "electron";
 import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
 import log from "electron-log";
+import { download } from "electron-dl";
 import AWS from "aws-sdk";
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
@@ -38,9 +39,44 @@ let mainWindow = null;
 
 ipcMain.on("ipc-s3", async (event, arg) => {
   const [action, payload] = arg;
+  let defaultPath;
+  let defaultFileName;
+  let customURL;
+  let properties = {};
   switch (action) {
     case "download_object":
-      mainWindow.webContents.downloadURL(payload.presignedUrl);
+      // mainWindow.webContents.downloadURL(payload.presignedUrl);
+      defaultPath = app.getPath("downloads");
+      defaultFileName = payload.presignedUrl.split("/").pop().split("?")[0];
+      customURL = dialog.showSaveDialogSync({
+        defaultPath: `${defaultPath}/${defaultFileName}`,
+      });
+      if (customURL) {
+        const filePath = customURL.split("/");
+        const filename = `${filePath.pop()}`;
+        const directory = filePath.join("/");
+        properties = { directory, filename };
+        await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
+          ...properties,
+          onProgress: (progress) => {
+            mainWindow.webContents.send("download-progress", [
+              {
+                filename,
+                progress,
+                presignedUrl: payload.presignedUrl,
+              },
+            ]);
+          },
+          onCompleted: (item) => {
+            mainWindow.webContents.send("download-complete", [
+              {
+                filename,
+                item,
+              },
+            ]);
+          },
+        });
+      }
       break;
     default:
       break;

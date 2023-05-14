@@ -12,6 +12,7 @@ module.exports = {
     "react/prop-types": "off",
     "jsx-a11y/no-static-element-interactions": "off",
     "no-await-in-loop": "off",
+    "prefer-destructuring": "off",
   },
   parserOptions: {
     ecmaVersion: 2020,

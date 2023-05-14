@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Card, Divider, Table, message } from "antd";
+import {
+  Button,
+  Card,
+  Divider,
+  Progress,
+  Table,
+  message,
+  notification,
+  Space
+} from "antd";
 import {
   DownloadOutlined,
   FileOutlined,
@@ -14,6 +23,8 @@ import getColumnSearchProps from "../common/getColumnSearchProps";
 
 function S3ObjectsTable() {
   const [messageApi, contextHolder] = message.useMessage();
+  const [notifApi, notifContextHolder] = notification.useNotification();
+
   const { bucket } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -50,6 +61,21 @@ function S3ObjectsTable() {
   useEffect(() => {
     handleListObjectsByBucket(bucket);
   }, [bucket]);
+
+  window.electron.ipcRenderer.on("download-progress", (args) => {
+    const perc = args[0].progress.percent * 100;
+    notifApi.open({
+      closeIcon: null,
+      key: args[0].presignedUrl,
+      message: (
+        <Space>
+          <DownloadOutlined />
+          {args[0].filename}
+        </Space>
+      ),
+      description: <Progress percent={perc.toFixed(0)} />,
+    });
+  });
 
   const getObject = async (key) => {
     const presignedUrl = await window.electron.aws.s3.getObject([
@@ -153,6 +179,7 @@ function S3ObjectsTable() {
   return (
     <>
       {contextHolder}
+      {notifContextHolder}
       <Card
         title={bucket}
         extra={[
