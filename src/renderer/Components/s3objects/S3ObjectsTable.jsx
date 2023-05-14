@@ -9,10 +9,10 @@ import {
   SyncOutlined,
 } from "@ant-design/icons";
 import prettyBytes from "pretty-bytes";
-import BreadcrumbKey from "./BreadcrumbKey";
-import getColumnSearchProps from "./getColumnSearchProps";
+import S3Breadcrumb from "./S3Breadcrumb";
+import getColumnSearchProps from "../common/getColumnSearchProps";
 
-function TableObjects() {
+function S3ObjectsTable() {
   const [messageApi, contextHolder] = message.useMessage();
   const { bucket } = useParams();
   const navigate = useNavigate();
@@ -106,6 +106,7 @@ function TableObjects() {
     {
       title: "Last Modified",
       dataIndex: "LastModified",
+      sorter: (a, b) => a.LastModified - b.LastModified,
       width: 480,
       render: (date) => (
         <span style={{ color: "#888" }}>{date?.toString()}</span>
@@ -115,6 +116,7 @@ function TableObjects() {
       title: "Size",
       dataIndex: "Size",
       width: 100,
+      sorter: (a, b) => a.Size - b.Size,
       render: (size) => {
         if (!size) return null;
         return (
@@ -159,6 +161,10 @@ function TableObjects() {
             Home
           </Button>,
           <Divider key="d1" type="vertical" />,
+          <Button key="all-buckets" onClick={() => navigate("/buckets")}>
+            All Buckets
+          </Button>,
+          <Divider key="d2" type="vertical" />,
           <Button
             key="refresh"
             onClick={() => handleListObjectsByBucket(bucket, curPrefix)}
@@ -168,7 +174,7 @@ function TableObjects() {
           </Button>,
         ]}
       >
-        <BreadcrumbKey
+        <S3Breadcrumb
           bucket={bucket}
           s3Prefix={curPrefix}
           onChange={(prefix) => handleListObjectsByBucket(bucket, prefix)}
@@ -186,4 +192,4 @@ function TableObjects() {
   );
 }
 
-export default TableObjects;
+export default S3ObjectsTable;
