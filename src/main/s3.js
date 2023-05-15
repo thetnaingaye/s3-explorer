@@ -5,6 +5,7 @@ import {
   ListBucketsCommand,
   ListObjectsV2Command,
   S3Client,
+  GetBucketLocationCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // import sharedIniFileLoader from "@aws-sdk/shared-ini-file-loader";
@@ -19,10 +20,17 @@ const handleListObjects = async (e, args) => {
   const credentials = new AWS.SharedIniFileCredentials({
     profile: payload.awsProfile,
   });
-  const s3 = new S3Client({
+  let s3 = new S3Client({
     credentials,
   });
-
+  const cmdBucketLocation = new GetBucketLocationCommand({
+    Bucket: payload.bucket,
+  });
+  const { LocationConstraint } = await s3.send(cmdBucketLocation);
+  s3 = new S3Client({
+    credentials,
+    region: LocationConstraint,
+  });
   const command = new ListObjectsV2Command({
     Bucket: payload.bucket,
     Delimiter: "/",
