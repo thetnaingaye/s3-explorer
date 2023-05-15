@@ -4,7 +4,7 @@ import { Button, Card, Table, Divider, message } from "antd";
 import { HomeFilled, SyncOutlined } from "@ant-design/icons";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 
-function BucketsTable() {
+function BucketsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -12,7 +12,11 @@ function BucketsTable() {
   const listBuckets = async () => {
     try {
       setLoading(true);
-      const data = await window.electron.aws.s3.listBuckets();
+      const data = await window.electron.aws.s3.listBuckets([
+        {
+          awsProfile,
+        },
+      ]);
       setBuckets(data);
       setLoading(false);
     } catch (error) {

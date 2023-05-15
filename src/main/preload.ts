@@ -31,6 +31,9 @@ const electronHandler = {
       listBuckets: (args: unknown[]) =>
         ipcRenderer.invoke("aws:s3:listBuckets", args),
     },
+    profile: {
+      list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),
+    },
   },
 };
 

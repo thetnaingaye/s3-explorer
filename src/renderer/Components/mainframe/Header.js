@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Select } from "antd";
+import { useNavigate } from "react-router-dom";
 
-export default function Header() {
+export default function Header({ awsProfiles, onProfileChange }) {
   const navigate = useNavigate();
+  const handleProfileChange = (value) => {
+    navigate("/");
+    onProfileChange(value);
+  };
   return (
     <div>
       <div
@@ -14,14 +18,30 @@ export default function Header() {
           fontWeight: 300,
           letterSpacing: 1.1,
           backgroundColor: "#f0f0f0",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
-        onKeyDown={() => navigate("/")}
-        onClick={() => navigate("/")}
       >
-        <strong>AWS S3 Explorer </strong>
-        <span style={{ fontSize: "50%", letterSpacing: 1 }}>
+        <strong onClick={() => navigate("/")} onKeyDown={() => navigate("/")}>
+          AWS S3 Explorer{" "}
+        </strong>
+        {/* <span style={{ fontSize: "50%", letterSpacing: 1 }}>
           powered by aws-sdk and aws-cli
-        </span>
+        </span> */}
+        <div>
+          <span style={{ fontSize: "65%" }}>aws profile: </span>
+          <Select
+            placeholder="select aws profile"
+            // defaultValue={undefined}
+            style={{ width: 225, fontSize: "90%" }}
+            onChange={handleProfileChange}
+            options={awsProfiles.map((item) => ({
+              value: item,
+              label: item,
+            }))}
+          />
+        </div>
       </div>
     </div>
   );

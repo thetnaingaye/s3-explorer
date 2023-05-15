@@ -12,7 +12,7 @@ import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 
-function S3ObjectsTable() {
+function S3ObjectsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
 
   const { bucket } = useParams();
@@ -47,6 +47,7 @@ function S3ObjectsTable() {
         {
           bucket: BucketName,
           prefix: Prefix,
+          awsProfile,
         },
       ]);
       let { contents } = data;
@@ -75,6 +76,7 @@ function S3ObjectsTable() {
       {
         Bucket: bucket,
         Key: key,
+        awsProfile,
       },
     ]);
 
