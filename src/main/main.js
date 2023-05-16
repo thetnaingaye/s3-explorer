@@ -47,11 +47,12 @@ ipcMain.on("ipc-s3", async (event, arg) => {
     case "download_object":
       // mainWindow.webContents.downloadURL(payload.presignedUrl);
       await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
-        saveAs: true,
+        // saveAs: true,
+        openFolderWhenDone: true,
         onProgress: (progress) => {
           mainWindow.webContents.send("download-progress", [
             {
-              filename: payload.presignedUrl,
+              filename: payload.filename,
               progress,
               presignedUrl: payload.presignedUrl,
             },
@@ -60,7 +61,7 @@ ipcMain.on("ipc-s3", async (event, arg) => {
         onCompleted: (item) => {
           mainWindow.webContents.send("download-complete", [
             {
-              filename: payload.presignedUrl,
+              filename: payload.filename,
               item,
             },
           ]);

@@ -83,6 +83,7 @@ function S3ObjectsTable({ awsProfile }) {
     window.electron.ipcRenderer.sendMessage("ipc-s3", [
       "download_object",
       {
+        filename: key.split("/").pop(),
         presignedUrl,
       },
     ]);
