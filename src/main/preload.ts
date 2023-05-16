@@ -30,6 +30,8 @@ const electronHandler = {
         ipcRenderer.invoke("aws:s3:getObject", args),
       listBuckets: (args: unknown[]) =>
         ipcRenderer.invoke("aws:s3:listBuckets", args),
+      getBucketRegion: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:getBucketRegion", args),
     },
     profile: {
       list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),

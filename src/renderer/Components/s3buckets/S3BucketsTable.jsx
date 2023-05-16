@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Card, Table, Divider, message } from "antd";
-import { HomeFilled, SyncOutlined } from "@ant-design/icons";
+import { Button, Card, Table, Divider, message, Spin } from "antd";
+import { HomeFilled, LoadingOutlined, SyncOutlined } from "@ant-design/icons";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 
 function BucketsTable({ awsProfile }) {
@@ -17,16 +17,48 @@ function BucketsTable({ awsProfile }) {
           awsProfile,
         },
       ]);
+
       setBuckets(data);
       setLoading(false);
+      return data;
     } catch (error) {
       messageApi.error(error?.message);
       setLoading(false);
+      return [];
     }
   };
 
+  const getRegions = async (data) => {
+    const values = await Promise.allSettled(
+      data.map((item) => {
+        return window.electron.aws.s3.getBucketRegion([
+          {
+            awsProfile,
+            bucket: item.Name,
+          },
+        ]);
+      })
+    );
+    const regionMap = {};
+    values.forEach((v) => {
+      regionMap[v.value.bucket] = v.value.region;
+    });
+    const newBuckets = data.map((bucket) => {
+      bucket.region = regionMap[bucket.Name];
+      return bucket;
+    });
+    setBuckets(newBuckets);
+  };
+
   useEffect(() => {
-    listBuckets();
+    listBuckets()
+      .then((data) => {
+        getRegions(data);
+        return null;
+      })
+      .catch(() => {
+        message.error("failed to get buckets");
+      });
   }, []);
 
   const columns = [
@@ -35,7 +67,7 @@ function BucketsTable({ awsProfile }) {
       dataIndex: "Name",
       sorter: (a, b) => a.Name.localeCompare(b.Name),
       defaultSortOrder: "ascend",
-      width: "50%",
+      width: "40%",
       ...getColumnSearchProps("Name"),
       render: (text) => (
         <Link
@@ -48,9 +80,27 @@ function BucketsTable({ awsProfile }) {
       ),
     },
     {
+      title: "Region",
+      dataIndex: "region",
+      width: "20%",
+      sorter: (a, b) => a.region?.localeCompare(b.region),
+      ...getColumnSearchProps("region"),
+      render: (region) => {
+        if (!region) {
+          return (
+            <Spin
+              indicator={<LoadingOutlined style={{ fontSize: 10 }} spin />}
+            />
+          );
+        }
+        return region;
+      },
+    },
+    {
       title: "Creation Date",
       dataIndex: "CreationDate",
-      width: "50%",
+      width: "40%",
+      sorter: (a, b) => a.CreationDate - b.CreationDate,
       render: (text) => (
         <span style={{ color: "grey" }}>{text.toString()}</span>
       ),
