@@ -54,17 +54,17 @@ export default class MenuBuilder {
 
   buildDarwinTemplate(): MenuItemConstructorOptions[] {
     const subMenuAbout: DarwinMenuItemConstructorOptions = {
-      label: "Electron",
+      label: "S3-Explorer",
       submenu: [
         {
-          label: "About ElectronReact",
-          selector: "orderFrontStandardAboutPanel:",
+          label: "Version 0.1.0",
+          // selector: "orderFrontStandardAboutPanel:",
         },
         { type: "separator" },
         { label: "Services", submenu: [] },
         { type: "separator" },
         {
-          label: "Hide ElectronReact",
+          label: "Hide S3-Explorer",
           accelerator: "Command+H",
           selector: "hide:",
         },
@@ -154,32 +154,32 @@ export default class MenuBuilder {
     const subMenuHelp: MenuItemConstructorOptions = {
       label: "Help",
       submenu: [
+        // {
+        //   label: "Learn More",
+        //   click() {
+        //     shell.openExternal("https://electronjs.org");
+        //   },
+        // },
         {
-          label: "Learn More",
+          label: "Documentation (coming soon...)",
           click() {
-            shell.openExternal("https://electronjs.org");
+            // shell.openExternal(
+            //   "https://github.com/electron/electron/tree/main/docs#readme"
+            // );
           },
         },
-        {
-          label: "Documentation",
-          click() {
-            shell.openExternal(
-              "https://github.com/electron/electron/tree/main/docs#readme"
-            );
-          },
-        },
-        {
-          label: "Community Discussions",
-          click() {
-            shell.openExternal("https://www.electronjs.org/community");
-          },
-        },
-        {
-          label: "Search Issues",
-          click() {
-            shell.openExternal("https://github.com/electron/electron/issues");
-          },
-        },
+        // {
+        //   label: "Community Discussions",
+        //   click() {
+        //     shell.openExternal("https://www.electronjs.org/community");
+        //   },
+        // },
+        // {
+        //   label: "Search Issues",
+        //   click() {
+        //     shell.openExternal("https://github.com/electron/electron/issues");
+        //   },
+        // },
       ],
     };
 
