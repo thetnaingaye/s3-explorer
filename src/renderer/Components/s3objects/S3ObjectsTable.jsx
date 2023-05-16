@@ -21,23 +21,23 @@ function S3ObjectsTable({ awsProfile }) {
   const [objects, setObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
 
-  // window.electron.ipcRenderer.on("download-progress", (args) => {
-  //   const key = args[0].presignedUrl;
-  //   const perc = args[0].progress.percent * 100;
-  //   messageApi.open({
-  //     key,
-  //     icon: (
-  //       <div style={{ width: 420, textAlign: "left" }}>
-  //         <Space>
-  //           <DownloadOutlined />
-  //           {args[0].filename}
-  //         </Space>
+  window.electron.ipcRenderer.on("download-progress", (args) => {
+    const key = args[0].presignedUrl;
+    const perc = args[0].progress.percent * 100;
+    messageApi.open({
+      key,
+      icon: (
+        <div style={{ width: 420, textAlign: "left" }}>
+          <Space>
+            <DownloadOutlined />
+            {args[0].filename}
+          </Space>
 
-  //         <Progress percent={perc.toFixed(0)} />
-  //       </div>
-  //     ),
-  //   });
-  // });
+          <Progress percent={perc.toFixed(0)} />
+        </div>
+      ),
+    });
+  });
 
   const handleListObjectsByBucket = async (BucketName, Prefix = "") => {
     setLoading(true);

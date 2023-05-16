@@ -45,7 +45,27 @@ ipcMain.on("ipc-s3", async (event, arg) => {
   let properties = {};
   switch (action) {
     case "download_object":
-      mainWindow.webContents.downloadURL(payload.presignedUrl);
+      // mainWindow.webContents.downloadURL(payload.presignedUrl);
+      await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
+        saveAs: true,
+        onProgress: (progress) => {
+          mainWindow.webContents.send("download-progress", [
+            {
+              filename: payload.presignedUrl,
+              progress,
+              presignedUrl: payload.presignedUrl,
+            },
+          ]);
+        },
+        onCompleted: (item) => {
+          mainWindow.webContents.send("download-complete", [
+            {
+              filename: payload.presignedUrl,
+              item,
+            },
+          ]);
+        },
+      });
       // defaultPath = app.getPath("downloads");
       // defaultFileName = payload.presignedUrl.split("/").pop().split("?")[0];
       // customURL = dialog.showSaveDialogSync({
