@@ -197,7 +197,8 @@
     },
     "linux": {
       "target": [
-        "rpm"
+        "rpm",
+        "deb"
       ]
     },
     "directories": {
