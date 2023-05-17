@@ -124,13 +124,13 @@ const handleListBuckets = async (e, args) => {
   });
   const s3 = new S3Client({
     credentials,
+    region: "us-east-1"  // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
   });
 
   const command = new ListBucketsCommand({});
   const { Buckets } = await s3.send(command);
   return Buckets;
 };
-
 
 
 const handleListProfiles = async (e, args) => {

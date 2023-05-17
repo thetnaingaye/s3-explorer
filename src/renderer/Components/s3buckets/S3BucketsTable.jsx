@@ -17,7 +17,6 @@ function BucketsTable({ awsProfile }) {
           awsProfile,
         },
       ]);
-
       setBuckets(data);
       setLoading(false);
       return data;
@@ -47,7 +46,7 @@ function BucketsTable({ awsProfile }) {
       bucket.region = regionMap[bucket.Name];
       return bucket;
     });
-    setBuckets(newBuckets);
+    setBuckets([...newBuckets]);
   };
 
   useEffect(() => {
