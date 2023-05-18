@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Card, Divider, Table, message } from "antd";
+import { Alert, Button, Card, Divider, Input, Table, message } from "antd";
 import {
   DownloadOutlined,
   FileOutlined,
@@ -19,7 +19,11 @@ function S3ObjectsTable({ awsProfile }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
+  const [userSearchObjects, setUserSearchObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
+  const [isTruncated, setIsTruncated] = useState(false);
+  const [continuationToken, setContinuationToken] = useState("");
+  const [userSearchPrefix, setUserSearchPrefix] = useState("");
 
   const handleListObjectsByBucket = async (BucketName, Prefix = "") => {
     setLoading(true);
@@ -30,9 +34,10 @@ function S3ObjectsTable({ awsProfile }) {
           bucket: BucketName,
           prefix: Prefix,
           awsProfile,
+          ContinuationToken: continuationToken,
         },
       ]);
-      let { contents } = data;
+      let { contents, IsTruncated, NextContinuationToken } = data;
       if (Prefix) {
         contents = contents.filter((x) => x && x.Key !== Prefix);
       }
@@ -42,6 +47,64 @@ function S3ObjectsTable({ awsProfile }) {
         item.Name = item.Key || item.Prefix;
       });
       setObjects(mergeData);
+      setIsTruncated(IsTruncated);
+      setContinuationToken(NextContinuationToken);
+      setLoading(false);
+    } catch (error) {
+      messageApi.error(error?.message);
+      setLoading(false);
+    }
+  };
+
+  const handleListObjectsByBucketContinue = async () => {
+    setLoading(true);
+    try {
+      const data = await window.electron.aws.s3.listObjects([
+        {
+          bucket,
+          userSearchPrefix,
+          prefix: curPrefix,
+          awsProfile,
+          ContinuationToken: continuationToken,
+        },
+      ]);
+      let { contents, IsTruncated, NextContinuationToken } = data;
+      contents = contents.filter((x) => x && x.Key !== curPrefix);
+      let mergeData = [...contents, ...data.prefixes];
+      mergeData = mergeData.filter((x) => x);
+      mergeData.forEach((item) => {
+        item.Name = item.Key || item.Prefix;
+      });
+
+      setObjects([...objects, ...mergeData]);
+      setIsTruncated(IsTruncated);
+      setContinuationToken(NextContinuationToken);
+      setLoading(false);
+    } catch (error) {
+      messageApi.error(error?.message);
+      setLoading(false);
+    }
+  };
+
+  const handleListObjectsByBucketUserSearch = async () => {
+    setLoading(true);
+    try {
+      const data = await window.electron.aws.s3.listObjects([
+        {
+          bucket,
+          userSearchPrefix,
+          prefix: curPrefix,
+          awsProfile,
+        },
+      ]);
+      let { contents } = data;
+      contents = contents.filter((x) => x && x.Key !== curPrefix);
+      let mergeData = [...contents, ...data.prefixes];
+      mergeData = mergeData.filter((x) => x);
+      mergeData.forEach((item) => {
+        item.Name = item.Key || item.Prefix;
+      });
+      setUserSearchObjects([...mergeData]);
       setLoading(false);
     } catch (error) {
       messageApi.error(error?.message);
@@ -71,7 +134,7 @@ function S3ObjectsTable({ awsProfile }) {
     ]);
   };
 
-  const columns = [
+  let columns = [
     {
       title: "Name",
       dataIndex: "Name",
@@ -153,6 +216,13 @@ function S3ObjectsTable({ awsProfile }) {
       },
     },
   ];
+  if (isTruncated) {
+    columns = columns.map((col) => {
+      delete col.sorter;
+      delete col.filterDropdown;
+      return col;
+    });
+  }
 
   return (
     <>
@@ -183,11 +253,34 @@ function S3ObjectsTable({ awsProfile }) {
           s3Prefix={curPrefix}
           onChange={(prefix) => handleListObjectsByBucket(bucket, prefix)}
         />
-
+        {isTruncated && !userSearchPrefix && (
+          <Alert
+            message="There are still objects remaining, click Retrive More. Sort and Search are disabled due to more than 999+ objects."
+            type="info"
+            showIcon
+            action={
+              <Button onClick={() => handleListObjectsByBucketContinue()}>
+                Retrive More
+              </Button>
+            }
+          />
+        )}
+        <Input
+          allowClear
+          onChange={(e) => {
+            setUserSearchObjects([]);
+            setUserSearchPrefix(e.target.value);
+          }}
+          style={{ width: 500, marginTop: 5, marginBottom: 5 }}
+          placeholder="Find objects by prefix:"
+          onPressEnter={() => {
+            handleListObjectsByBucketUserSearch();
+          }}
+        />
         <Table
           rowKey={(record) => `${record.Key}_${record.Prefix}`}
           columns={columns}
-          dataSource={objects}
+          dataSource={userSearchPrefix ? userSearchObjects : objects}
           loading={loading}
           size="small"
         />

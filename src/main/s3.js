@@ -100,6 +100,53 @@ const handleListObjects = async (e, args) => {
   };
 };
 
+const handleListObjectsV2 = async (e, args) => {
+  const [payload] = args;
+  const credentials = new AWS.SharedIniFileCredentials({
+    profile: payload.awsProfile,
+  });
+
+  const { region } = await handleGetBucketRegion({}, args);
+  const s3 = new S3Client({
+    credentials,
+    region,
+  });
+
+  let command;
+  if (payload.userSearchPrefix) {
+    command = new ListObjectsV2Command({
+      Bucket: payload.bucket,
+      Prefix: payload.prefix.substr(0) + payload.userSearchPrefix,
+    });
+  } else {
+    command = new ListObjectsV2Command({
+      Bucket: payload.bucket,
+      Delimiter: "/",
+      Prefix: payload.prefix,
+    });
+  }
+
+  if (payload.ContinuationToken) {
+    command.input.ContinuationToken = payload.ContinuationToken;
+  }
+
+  let contents = [];
+  let prefixes = [];
+
+  const { Contents, IsTruncated, NextContinuationToken, CommonPrefixes } =
+    await s3.send(command);
+  contents = contents.concat(Contents);
+  prefixes = prefixes.concat(CommonPrefixes);
+  command.input.ContinuationToken = NextContinuationToken;
+
+  return {
+    contents,
+    prefixes,
+    IsTruncated,
+    NextContinuationToken,
+  };
+};
+
 const handleGetObject = async (e, args) => {
   const [payload] = args;
   const credentials = new AWS.SharedIniFileCredentials({
@@ -124,14 +171,13 @@ const handleListBuckets = async (e, args) => {
   });
   const s3 = new S3Client({
     credentials,
-    region: "us-east-1"  // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
+    region: "us-east-1", // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
   });
 
   const command = new ListBucketsCommand({});
   const { Buckets } = await s3.send(command);
   return Buckets;
 };
-
 
 const handleListProfiles = async (e, args) => {
   const sharedIniFileLoader = require("@aws-sdk/shared-ini-file-loader");
@@ -140,7 +186,7 @@ const handleListProfiles = async (e, args) => {
 };
 
 export default () => {
-  ipcMain.handle("aws:s3:listObjects", handleListObjects);
+  ipcMain.handle("aws:s3:listObjects", handleListObjectsV2);
   ipcMain.handle("aws:s3:getObject", handleGetObject);
   ipcMain.handle("aws:s3:listBuckets", handleListBuckets);
   ipcMain.handle("aws:s3:getBucketRegion", handleGetBucketRegion);
