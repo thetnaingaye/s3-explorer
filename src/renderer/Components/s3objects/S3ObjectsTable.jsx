@@ -29,14 +29,12 @@ function S3ObjectsTable({ awsProfile }) {
     setLoading(true);
     setCurrPrefix(Prefix);
     try {
-      const data = await window.electron.aws.s3.listObjects([
-        {
-          bucket: BucketName,
-          prefix: Prefix,
-          awsProfile,
-          ContinuationToken: continuationToken,
-        },
-      ]);
+      const payload = {
+        bucket: BucketName,
+        prefix: Prefix,
+        awsProfile,
+      };
+      const data = await window.electron.aws.s3.listObjects([payload]);
       let { contents, IsTruncated, NextContinuationToken } = data;
       if (Prefix) {
         contents = contents.filter((x) => x && x.Key !== Prefix);
