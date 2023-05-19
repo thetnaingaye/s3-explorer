@@ -214,8 +214,9 @@ function S3ObjectsTable({ awsProfile }) {
       },
     },
   ];
-  if (isTruncated) {
+  if (isTruncated && !userSearchPrefix) {
     columns = columns.map((col) => {
+      delete col.defaultSortOrder;
       delete col.sorter;
       delete col.filterDropdown;
       return col;
