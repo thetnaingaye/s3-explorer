@@ -31,9 +31,12 @@ function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
   const listBuckets = async () => {
     try {
       setLoading(true);
-      const data = await window.electron.electronStore.get(["buckets"]);
+      let data = await window.electron.electronStore.get(["buckets"]);
+      if (!data) {
+        data = [];
+      }
       const bucketsGroup = {};
-      (data || []).forEach((bucket) => {
+      data.forEach((bucket) => {
         if (bucketsGroup[bucket.AwsProfile]) {
           bucketsGroup[bucket.AwsProfile].push(bucket);
         } else {
