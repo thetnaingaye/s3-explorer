@@ -9,15 +9,15 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from "path";
-import { app, BrowserWindow, shell, ipcMain, dialog } from "electron";
-import { autoUpdater } from "electron-updater";
+import { app, BrowserWindow, shell, ipcMain } from "electron";
+// import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
 import log from "electron-log";
 import { download } from "electron-dl";
-import AWS from "aws-sdk";
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
-import s3IPCMainHandler from "./s3";
+import s3IpcMainHandler from "./s3";
+import storeIpcMainHanlder from "./store";
 
 // AWS.config.getCredentials((err) => {
 //   if (err) console.log(err.stack);
@@ -30,8 +30,8 @@ import s3IPCMainHandler from "./s3";
 class AppUpdater {
   constructor() {
     log.transports.file.level = "info";
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify();
+    // autoUpdater.logger = log;
+    // autoUpdater.checkForUpdatesAndNotify();
   }
 }
 
@@ -39,10 +39,6 @@ let mainWindow = null;
 
 ipcMain.on("ipc-s3", async (event, arg) => {
   const [action, payload] = arg;
-  let defaultPath;
-  let defaultFileName;
-  let customURL;
-  let properties = {};
   switch (action) {
     case "download_object":
       // mainWindow.webContents.downloadURL(payload.presignedUrl);
@@ -116,23 +112,23 @@ if (isDebug) {
   require("electron-debug")();
 }
 
-const installExtensions = async () => {
-  const installer = require("electron-devtools-installer");
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ["REACT_DEVELOPER_TOOLS"];
+// const installExtensions = async () => {
+//   const installer = require("electron-devtools-installer");
+//   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
+//   const extensions = ["REACT_DEVELOPER_TOOLS"];
 
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload
-    )
-    .catch(console.log);
-};
+//   return installer
+//     .default(
+//       extensions.map((name) => installer[name]),
+//       forceDownload
+//     )
+//     .catch(console.log);
+// };
 
 const createWindow = async () => {
-  if (isDebug) {
-    await installExtensions();
-  }
+  // if (isDebug) {
+  //   await installExtensions();
+  // }
 
   const RESOURCES_PATH = app.isPackaged
     ? path.join(process.resourcesPath, "assets")
@@ -206,6 +202,7 @@ app
       // dock icon is clicked and there are no other windows open.
       if (mainWindow === null) createWindow();
     });
-    s3IPCMainHandler();
+    storeIpcMainHanlder();
+    s3IpcMainHandler();
   })
   .catch(console.log);

@@ -37,6 +37,11 @@ const electronHandler = {
       list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),
     },
   },
+  electronStore: {
+    get: (args: unknown[]) => ipcRenderer.invoke("get", args),
+    set: (args: unknown[]) => ipcRenderer.invoke("set", args),
+    delete: (args: unknown[]) => ipcRenderer.invoke("delete", args),
+  },
 };
 
 contextBridge.exposeInMainWorld("electron", electronHandler);

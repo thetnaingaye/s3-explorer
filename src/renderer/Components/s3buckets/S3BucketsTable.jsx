@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Table, Divider, message, Spin } from "antd";
-import { HomeFilled, LoadingOutlined, SyncOutlined } from "@ant-design/icons";
+import {
+  HomeFilled,
+  LoadingOutlined,
+  RollbackOutlined,
+  SyncOutlined,
+} from "@ant-design/icons";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 
 function BucketsTable({ awsProfile }) {
@@ -121,6 +126,11 @@ function BucketsTable({ awsProfile }) {
             Home
           </Button>,
           <Divider key="d1" type="vertical" />,
+          <Button key="back" onClick={() => navigate(-1)}>
+            <RollbackOutlined />
+            Back
+          </Button>,
+          <Divider key="d2" type="vertical" />,
           <Button onClick={listBuckets} key="refresh">
             <SyncOutlined spin={loading} />
             Refresh

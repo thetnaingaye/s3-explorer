@@ -7,6 +7,7 @@ import {
   FolderFilled,
   HomeFilled,
   SyncOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
@@ -234,8 +235,9 @@ function S3ObjectsTable({ awsProfile }) {
             Home
           </Button>,
           <Divider key="d1" type="vertical" />,
-          <Button key="all-buckets" onClick={() => navigate("/buckets")}>
-            All Buckets
+          <Button key="all-buckets" onClick={() => navigate(-1)}>
+            <RollbackOutlined />
+            Back
           </Button>,
           <Divider key="d2" type="vertical" />,
           <Button

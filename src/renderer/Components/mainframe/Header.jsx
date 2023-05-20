@@ -1,7 +1,11 @@
 import { Select } from "antd";
 import { useNavigate } from "react-router-dom";
 
-export default function Header({ awsProfiles, onProfileChange }) {
+export default function Header({
+  awsProfiles,
+  onProfileChange,
+  curAwsProfile,
+}) {
   const navigate = useNavigate();
   const handleProfileChange = (value) => {
     navigate("/");
@@ -33,7 +37,7 @@ export default function Header({ awsProfiles, onProfileChange }) {
           <span style={{ fontSize: "65%" }}>aws profile: </span>
           <Select
             placeholder="select aws profile"
-            // defaultValue={undefined}
+            value={curAwsProfile}
             style={{ width: 225, fontSize: "90%" }}
             onChange={handleProfileChange}
             options={awsProfiles.map((item) => ({

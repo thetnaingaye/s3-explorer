@@ -49,7 +49,12 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
     }
   };
   return (
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-start",
+      }}
+    >
       <Breadcrumb
         separator={
           <Button
@@ -60,7 +65,13 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
         }
         items={breadcrumbItems}
       />
-      <Button onClick={handleBack} size="small" disabled={!s3Prefix}>
+      <Button
+        type="link"
+        onClick={handleBack}
+        size="small"
+        disabled={!s3Prefix}
+        style={{ border: "none", padding: 3, margin: 0 }}
+      >
         <RollbackOutlined /> Back
       </Button>
     </div>

@@ -5,17 +5,10 @@ import {
   ListBucketsCommand,
   ListObjectsV2Command,
   S3Client,
-  GetBucketLocationCommand,
+  // GetBucketLocationCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
-// import sharedIniFileLoader from "@aws-sdk/shared-ini-file-loader";
-// const credentials = new AWS.SharedIniFileCredentials({ profile: "ldx_prod" });
-// AWS.config.credentials = credentials;
-// const s3 = new S3Client({
-//   credentials
-// });
-
+import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
 
 // const handleGetBucketRegion = async (e, args) => {
 //   const [payload] = args;
@@ -32,7 +25,6 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 //   return LocationConstraint;
 // };
 
-
 const handleGetBucketRegion = async (e, args) => {
   const [payload] = args;
   const credentials = new AWS.SharedIniFileCredentials({
@@ -45,12 +37,9 @@ const handleGetBucketRegion = async (e, args) => {
     Bucket: payload.bucket,
   });
   let region;
-  requestObject.on(
-    "httpHeaders",
-    (statusCode, headers, response, statusMessage) => {
-      region = headers["x-amz-bucket-region"];
-    }
-  );
+  requestObject.on("httpHeaders", (statusCode, headers) => {
+    region = headers["x-amz-bucket-region"];
+  });
   await requestObject.promise();
   return {
     bucket: payload.bucket,
@@ -58,47 +47,47 @@ const handleGetBucketRegion = async (e, args) => {
   };
 };
 
-const handleListObjects = async (e, args) => {
-  const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
-  // let s3 = new S3Client({
-  //   credentials,
-  // });
-  // const cmdBucketLocation = new GetBucketLocationCommand({
-  //   Bucket: payload.bucket,
-  // });
-  // const { LocationConstraint } = await s3.send(cmdBucketLocation);
-  const { region } = await handleGetBucketRegion({}, args);
-  const s3 = new S3Client({
-    credentials,
-    region,
-  });
-  const command = new ListObjectsV2Command({
-    Bucket: payload.bucket,
-    Delimiter: "/",
-    Prefix: payload.prefix,
-  });
-  let isTruncated = true;
+// const handleListObjects = async (e, args) => {
+//   const [payload] = args;
+//   const credentials = new AWS.SharedIniFileCredentials({
+//     profile: payload.awsProfile,
+//   });
+//   // let s3 = new S3Client({
+//   //   credentials,
+//   // });
+//   // const cmdBucketLocation = new GetBucketLocationCommand({
+//   //   Bucket: payload.bucket,
+//   // });
+//   // const { LocationConstraint } = await s3.send(cmdBucketLocation);
+//   const { region } = await handleGetBucketRegion({}, args);
+//   const s3 = new S3Client({
+//     credentials,
+//     region,
+//   });
+//   const command = new ListObjectsV2Command({
+//     Bucket: payload.bucket,
+//     Delimiter: "/",
+//     Prefix: payload.prefix,
+//   });
+//   let isTruncated = true;
 
-  let contents = [];
-  let prefixes = [];
+//   let contents = [];
+//   let prefixes = [];
 
-  while (isTruncated) {
-    const { Contents, IsTruncated, NextContinuationToken, CommonPrefixes } =
-      await s3.send(command);
-    contents = contents.concat(Contents);
-    prefixes = prefixes.concat(CommonPrefixes);
-    isTruncated = IsTruncated;
-    command.input.ContinuationToken = NextContinuationToken;
-  }
+//   while (isTruncated) {
+//     const { Contents, IsTruncated, NextContinuationToken, CommonPrefixes } =
+//       await s3.send(command);
+//     contents = contents.concat(Contents);
+//     prefixes = prefixes.concat(CommonPrefixes);
+//     isTruncated = IsTruncated;
+//     command.input.ContinuationToken = NextContinuationToken;
+//   }
 
-  return {
-    contents,
-    prefixes,
-  };
-};
+//   return {
+//     contents,
+//     prefixes,
+//   };
+// };
 
 const handleListObjectsV2 = async (e, args) => {
   const [payload] = args;
@@ -179,9 +168,8 @@ const handleListBuckets = async (e, args) => {
   return Buckets;
 };
 
-const handleListProfiles = async (e, args) => {
-  const sharedIniFileLoader = require("@aws-sdk/shared-ini-file-loader");
-  const profiles = await sharedIniFileLoader.loadSharedConfigFiles();
+const handleListProfiles = async () => {
+  const profiles = await loadSharedConfigFiles();
   return profiles;
 };
 

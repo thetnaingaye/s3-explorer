@@ -4,6 +4,7 @@ import { Progress, Space, message } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 import Header from "./Header";
 import S3BucketsTable from "../s3buckets/S3BucketsTable";
+import S3BucketsTableUser from "../s3buckets/S3BucketsTableUser";
 import S3ObjectsTable from "../s3objects/S3ObjectsTable";
 import Dashboard from "../dashboard/Dashboard";
 
@@ -52,6 +53,7 @@ export default function Mainframe() {
     <>
       {contextHolder}
       <Header
+        curAwsProfile={curAwsProfile}
         awsProfiles={awsProfiles}
         onProfileChange={setCurAwsProfile}
         loading={loading}
@@ -66,6 +68,17 @@ export default function Mainframe() {
           exact
           path="/buckets"
           element={<S3BucketsTable awsProfile={curAwsProfile} />}
+        />
+        <Route
+          exact
+          path="/buckets/user"
+          element={
+            <S3BucketsTableUser
+              awsProfile={curAwsProfile}
+              awsProfiles={awsProfiles}
+              onProfileChange={setCurAwsProfile}
+            />
+          }
         />
         <Route
           path="/objects/:bucket/:prefix?"
