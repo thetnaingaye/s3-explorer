@@ -9,6 +9,8 @@ import {
   Space,
   Table,
   message,
+  Popover,
+  Drawer,
 } from "antd";
 import Icon, {
   DownloadOutlined,
@@ -17,11 +19,14 @@ import Icon, {
   HomeFilled,
   SyncOutlined,
   RollbackOutlined,
+  DeleteOutlined,
+  EllipsisOutlined,
 } from "@ant-design/icons";
 import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
+import S3UploadFile from "./S3UploadFile";
 
 function S3ObjectsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -33,6 +38,8 @@ function S3ObjectsTable({ awsProfile }) {
   const [isTruncated, setIsTruncated] = useState(false);
   const [continuationToken, setContinuationToken] = useState("");
   const [searchPrefixMap, setSearchPrefixMap] = useState({});
+  const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const handleListObjectsByBucket = async (
     Prefix = "",
@@ -79,6 +86,11 @@ function S3ObjectsTable({ awsProfile }) {
     handleListObjectsByBucket();
   }, [bucket]);
 
+  const handleRefresh = () => {
+    setObjects([]);
+    handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+  };
+
   const getObject = async (key) => {
     const presignedUrl = await window.electron.aws.s3.getObject([
       {
@@ -95,6 +107,56 @@ function S3ObjectsTable({ awsProfile }) {
         presignedUrl,
       },
     ]);
+  };
+
+  const hanldeCreateFolder = async () => {
+    try {
+      await window.electron.aws.s3.putObject([
+        {
+          Bucket: bucket,
+          Key: `${curPrefix}${newFolderName}/`,
+          awsProfile,
+        },
+      ]);
+      message.info("folder created successfully");
+      setNewFolderName("");
+      handleRefresh();
+    } catch (error) {
+      message.error("failed to create folder");
+    }
+  };
+
+  const deleteObject = async (key) => {
+    try {
+      await window.electron.aws.s3.deleteObject([
+        {
+          Bucket: bucket,
+          Key: key,
+          awsProfile,
+        },
+      ]);
+      message.info("object deleted successfully");
+      handleRefresh();
+    } catch (error) {
+      message.error("failed to delete");
+    }
+  };
+
+  const deleteFolder = async (key) => {
+    try {
+      await window.electron.aws.s3.deleteFolder([
+        {
+          bucket,
+          prefix: key,
+          Key: key,
+          awsProfile,
+        },
+      ]);
+      message.info("object deleted successfully");
+      handleRefresh();
+    } catch (err) {
+      message.error(`failed to delete: ${err}`);
+    }
   };
 
   let columns = [
@@ -179,16 +241,43 @@ function S3ObjectsTable({ awsProfile }) {
       fixed: "right",
       width: 135,
       render: (text, row) => {
-        if (!row?.Key) return null;
+        // if (!row?.Key) return null;
         return (
-          <Button
-            onClick={() => getObject(row.Key)}
-            size="small"
-            disabled={row.StorageClass !== "STANDARD"}
-          >
-            <DownloadOutlined />
-            download
-          </Button>
+          <Space>
+            <Button
+              onClick={() => getObject(row.Key)}
+              size="small"
+              disabled={row.StorageClass !== "STANDARD"}
+            >
+              <DownloadOutlined />
+              download
+            </Button>
+
+            <Popover
+              content={
+                <Button
+                  danger
+                  onClick={() => {
+                    if (row.Key) {
+                      deleteObject(row.Key);
+                    } else if (row.Prefix) {
+                      deleteFolder(row.Prefix);
+                    }
+                  }}
+                  size="small"
+                >
+                  <DeleteOutlined />
+                  delete object
+                </Button>
+              }
+              title="Other actions"
+              trigger="click"
+            >
+              <Button size="small">
+                <EllipsisOutlined rotate={90} />
+              </Button>
+            </Popover>
+          </Space>
         );
       },
     },
@@ -203,11 +292,6 @@ function S3ObjectsTable({ awsProfile }) {
     });
   }
 
-  const handleRefresh = () => {
-    setObjects([]);
-    handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
-  };
-
   const handlePrefixInputChange = (e) => {
     const searchPrefix = e.target.value;
     setSearchPrefixMap({
@@ -217,6 +301,13 @@ function S3ObjectsTable({ awsProfile }) {
     if (!searchPrefix) {
       handleListObjectsByBucket(curPrefix);
     }
+  };
+  const showUploadDrawer = () => {
+    setUploadDrawerOpen(true);
+  };
+
+  const handleUploadDrawerClose = () => {
+    setUploadDrawerOpen(false);
   };
 
   return (
@@ -246,7 +337,7 @@ function S3ObjectsTable({ awsProfile }) {
           </Button>,
         ]}
       >
-        <div style={{marginTop: 5, marginBottom: 5 }}>
+        <div style={{ marginTop: 5, marginBottom: 5 }}>
           <S3Breadcrumb
             bucket={bucket}
             s3Prefix={curPrefix}
@@ -277,17 +368,44 @@ function S3ObjectsTable({ awsProfile }) {
             }
           />
         )}
-        <Input
-          allowClear
-          value={searchPrefixMap[curPrefix]}
-          onChange={handlePrefixInputChange}
-          style={{ width: 500, marginTop: 5, marginBottom: 5 }}
-          placeholder="Find objects by prefix:"
-          onPressEnter={() => {
-            setObjects([]);
-            handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
-        />
+        >
+          <Input
+            allowClear
+            value={searchPrefixMap[curPrefix]}
+            onChange={handlePrefixInputChange}
+            style={{ width: 500, marginTop: 5, marginBottom: 5 }}
+            placeholder="Find objects by prefix:"
+            onPressEnter={() => {
+              setObjects([]);
+              handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+            }}
+          />
+          <Space>
+            <Popover
+              content={
+                <Space>
+                  <Input
+                    value={newFolderName}
+                    placeholder="folder name"
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                  />
+                  <Button onClick={hanldeCreateFolder}>Create</Button>
+                </Space>
+              }
+              trigger="click"
+            >
+              <Button>Create folder</Button>
+            </Popover>
+            <Button onClick={showUploadDrawer}>Upload files</Button>
+          </Space>
+        </div>
+
         <Table
           rowKey={(record) => `${record.Key}_${record.Prefix}`}
           columns={columns}
@@ -295,6 +413,19 @@ function S3ObjectsTable({ awsProfile }) {
           loading={loading}
           size="small"
         />
+        <Drawer
+          title="Upload files"
+          placement="right"
+          open={uploadDrawerOpen}
+          onClose={handleUploadDrawerClose}
+        >
+          <S3UploadFile
+            bucket={bucket}
+            prefix={curPrefix}
+            awsProfile={awsProfile}
+            onUploadComplete={handleRefresh}
+          />
+        </Drawer>
       </Card>
     </>
   );

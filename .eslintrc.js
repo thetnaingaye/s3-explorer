@@ -10,9 +10,11 @@ module.exports = {
     "import/no-unresolved": "off",
     "import/no-import-module-exports": "off",
     "react/prop-types": "off",
+    "react/jsx-props-no-spreading": "off",
     "jsx-a11y/no-static-element-interactions": "off",
     "no-await-in-loop": "off",
     "prefer-destructuring": "off",
+    "no-restricted-syntax" : "off"
   },
   parserOptions: {
     ecmaVersion: 2020,

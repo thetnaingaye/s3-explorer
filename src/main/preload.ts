@@ -32,6 +32,14 @@ const electronHandler = {
         ipcRenderer.invoke("aws:s3:listBuckets", args),
       getBucketRegion: (args: unknown[]) =>
         ipcRenderer.invoke("aws:s3:getBucketRegion", args),
+      uploadFiles: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:uploadFiles", args),
+      deleteObject: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:deleteObject", args),
+      deleteFolder: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:deleteFolder", args),
+      putObject: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:putObject", args),
     },
     profile: {
       list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),
