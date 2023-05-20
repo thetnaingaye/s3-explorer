@@ -15,95 +15,49 @@ import getColumnSearchProps from "../common/getColumnSearchProps";
 
 function S3ObjectsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
-
   const { bucket } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
-  const [userSearchObjects, setUserSearchObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
   const [isTruncated, setIsTruncated] = useState(false);
   const [continuationToken, setContinuationToken] = useState("");
-  const [userSearchPrefix, setUserSearchPrefix] = useState("");
+  const [searchPrefixMap, setSearchPrefixMap] = useState({});
 
-  const handleListObjectsByBucket = async (BucketName, Prefix = "") => {
+  const handleListObjectsByBucket = async (
+    Prefix = "",
+    searchPrefix = "",
+    continueToken = ""
+  ) => {
     setLoading(true);
     setCurrPrefix(Prefix);
     try {
       const payload = {
-        bucket: BucketName,
-        prefix: Prefix,
+        bucket,
+        prefix: searchPrefix ? `${Prefix}${searchPrefix}` : Prefix,
         awsProfile,
       };
-      const data = await window.electron.aws.s3.listObjects([payload]);
-      let { contents, IsTruncated, NextContinuationToken } = data;
-      if (Prefix) {
-        contents = contents.filter((x) => x && x.Key !== Prefix);
+      if (continuationToken) {
+        payload.ContinuationToken = continueToken;
       }
-      let mergeData = [...contents, ...data.prefixes];
+      const data = await window.electron.aws.s3.listObjects([payload]);
+      const { contents, IsTruncated, NextContinuationToken } = data;
+      let normalisedContents = contents;
+      if (Prefix) {
+        normalisedContents = contents.filter((x) => x && x.Key !== Prefix);
+      }
+      let mergeData = [...normalisedContents, ...data.prefixes];
       mergeData = mergeData.filter((x) => x);
       mergeData.forEach((item) => {
         item.Name = item.Key || item.Prefix;
       });
-      setObjects(mergeData);
+      if (continueToken) {
+        setObjects([...objects, ...mergeData]);
+      } else {
+        setObjects(mergeData);
+      }
       setIsTruncated(IsTruncated);
       setContinuationToken(NextContinuationToken);
-      setLoading(false);
-    } catch (error) {
-      messageApi.error(error?.message);
-      setLoading(false);
-    }
-  };
-
-  const handleListObjectsByBucketContinue = async () => {
-    setLoading(true);
-    try {
-      const data = await window.electron.aws.s3.listObjects([
-        {
-          bucket,
-          userSearchPrefix,
-          prefix: curPrefix,
-          awsProfile,
-          ContinuationToken: continuationToken,
-        },
-      ]);
-      let { contents, IsTruncated, NextContinuationToken } = data;
-      contents = contents.filter((x) => x && x.Key !== curPrefix);
-      let mergeData = [...contents, ...data.prefixes];
-      mergeData = mergeData.filter((x) => x);
-      mergeData.forEach((item) => {
-        item.Name = item.Key || item.Prefix;
-      });
-
-      setObjects([...objects, ...mergeData]);
-      setIsTruncated(IsTruncated);
-      setContinuationToken(NextContinuationToken);
-      setLoading(false);
-    } catch (error) {
-      messageApi.error(error?.message);
-      setLoading(false);
-    }
-  };
-
-  const handleListObjectsByBucketUserSearch = async () => {
-    setLoading(true);
-    try {
-      const data = await window.electron.aws.s3.listObjects([
-        {
-          bucket,
-          userSearchPrefix,
-          prefix: curPrefix,
-          awsProfile,
-        },
-      ]);
-      let { contents } = data;
-      contents = contents.filter((x) => x && x.Key !== curPrefix);
-      let mergeData = [...contents, ...data.prefixes];
-      mergeData = mergeData.filter((x) => x);
-      mergeData.forEach((item) => {
-        item.Name = item.Key || item.Prefix;
-      });
-      setUserSearchObjects([...mergeData]);
       setLoading(false);
     } catch (error) {
       messageApi.error(error?.message);
@@ -112,7 +66,7 @@ function S3ObjectsTable({ awsProfile }) {
   };
 
   useEffect(() => {
-    handleListObjectsByBucket(bucket);
+    handleListObjectsByBucket();
   }, [bucket]);
 
   const getObject = async (key) => {
@@ -150,12 +104,26 @@ function S3ObjectsTable({ awsProfile }) {
           return (
             <div>
               <FolderFilled />
-              <Button
-                type="link"
-                onClick={() => handleListObjectsByBucket(bucket, row?.Prefix)}
+              <span
+                style={{
+                  cursor: "pointer",
+                  padding: "4px 15px",
+                  color: "#1890ff",
+                }}
+                onClick={() => {
+                  setObjects([]);
+                  handleListObjectsByBucket(
+                    row?.Prefix,
+                    searchPrefixMap[row?.Prefix]
+                  );
+                }}
+                onKeyDown={() => {}}
               >
-                {row?.Prefix.replace(curPrefix, "")}
-              </Button>
+                {row?.Prefix.replace(
+                  curPrefix.replace(searchPrefixMap[row?.Prefix], ""),
+                  ""
+                )}
+              </span>
             </div>
           );
         }
@@ -215,7 +183,8 @@ function S3ObjectsTable({ awsProfile }) {
       },
     },
   ];
-  if (isTruncated && !userSearchPrefix) {
+
+  if (isTruncated) {
     columns = columns.map((col) => {
       delete col.defaultSortOrder;
       delete col.sorter;
@@ -223,6 +192,22 @@ function S3ObjectsTable({ awsProfile }) {
       return col;
     });
   }
+
+  const handleRefresh = () => {
+    setObjects([]);
+    handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+  };
+
+  const handlePrefixInputChange = (e) => {
+    const searchPrefix = e.target.value;
+    setSearchPrefixMap({
+      ...searchPrefixMap,
+      [curPrefix]: searchPrefix,
+    });
+    if (!searchPrefix) {
+      handleListObjectsByBucket(curPrefix);
+    }
+  };
 
   return (
     <>
@@ -240,10 +225,7 @@ function S3ObjectsTable({ awsProfile }) {
             Back
           </Button>,
           <Divider key="d2" type="vertical" />,
-          <Button
-            key="refresh"
-            onClick={() => handleListObjectsByBucket(bucket, curPrefix)}
-          >
+          <Button key="refresh" onClick={handleRefresh}>
             <SyncOutlined spin={loading} />
             Refresh
           </Button>,
@@ -252,15 +234,26 @@ function S3ObjectsTable({ awsProfile }) {
         <S3Breadcrumb
           bucket={bucket}
           s3Prefix={curPrefix}
-          onChange={(prefix) => handleListObjectsByBucket(bucket, prefix)}
+          onChange={(prefix) => {
+            setObjects([]);
+            handleListObjectsByBucket(prefix, searchPrefixMap[prefix]);
+          }}
         />
-        {isTruncated && !userSearchPrefix && (
+        {isTruncated && (
           <Alert
             message="There are still objects remaining, click Retrive More. Sort and Search are disabled due to more than 999+ objects."
             type="info"
             showIcon
             action={
-              <Button onClick={() => handleListObjectsByBucketContinue()}>
+              <Button
+                onClick={() =>
+                  handleListObjectsByBucket(
+                    curPrefix,
+                    searchPrefixMap[curPrefix],
+                    continuationToken
+                  )
+                }
+              >
                 Retrive More
               </Button>
             }
@@ -268,20 +261,19 @@ function S3ObjectsTable({ awsProfile }) {
         )}
         <Input
           allowClear
-          onChange={(e) => {
-            setUserSearchObjects([]);
-            setUserSearchPrefix(e.target.value);
-          }}
+          value={searchPrefixMap[curPrefix]}
+          onChange={handlePrefixInputChange}
           style={{ width: 500, marginTop: 5, marginBottom: 5 }}
           placeholder="Find objects by prefix:"
           onPressEnter={() => {
-            handleListObjectsByBucketUserSearch();
+            setObjects([]);
+            handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
           }}
         />
         <Table
           rowKey={(record) => `${record.Key}_${record.Prefix}`}
           columns={columns}
-          dataSource={userSearchPrefix ? userSearchObjects : objects}
+          dataSource={objects}
           loading={loading}
           size="small"
         />

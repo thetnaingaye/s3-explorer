@@ -101,19 +101,13 @@ const handleListObjectsV2 = async (e, args) => {
     region,
   });
 
-  let command;
-  if (payload.userSearchPrefix) {
-    command = new ListObjectsV2Command({
-      Bucket: payload.bucket,
-      Prefix: payload.prefix.substr(0) + payload.userSearchPrefix,
-    });
-  } else {
-    command = new ListObjectsV2Command({
-      Bucket: payload.bucket,
-      Delimiter: "/",
-      Prefix: payload.prefix,
-    });
-  }
+  const command = new ListObjectsV2Command({
+    Bucket: payload.bucket,
+    Delimiter: "/",
+    Prefix: payload.userSearchPrefix
+      ? payload.prefix + payload.userSearchPrefix
+      : payload.prefix,
+  });
 
   if (payload.ContinuationToken) {
     command.input.ContinuationToken = payload.ContinuationToken;
