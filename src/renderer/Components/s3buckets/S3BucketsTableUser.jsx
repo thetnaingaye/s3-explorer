@@ -13,12 +13,13 @@ import {
   Col,
   Row,
 } from "antd";
-import {
+import Icon, {
   HomeFilled,
   MinusCircleOutlined,
   RollbackOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
+import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
 function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -160,7 +161,13 @@ function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
                             navigate(`/objects/${bucket.Name}`);
                           }}
                         >
-                          {bucket.Name}
+                          <Space>
+                            <Icon
+                              component={BucketIcon}
+                              style={{ color: "#333" }}
+                            />
+                            {bucket.Name}
+                          </Space>
                         </span>
                       </List.Item>
                     )}

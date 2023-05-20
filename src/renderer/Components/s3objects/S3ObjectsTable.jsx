@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Alert, Button, Card, Divider, Input, Table, message } from "antd";
 import {
+  Alert,
+  Button,
+  Card,
+  Divider,
+  Input,
+  Space,
+  Table,
+  message,
+} from "antd";
+import Icon, {
   DownloadOutlined,
   FileOutlined,
   FolderFilled,
@@ -12,6 +21,7 @@ import {
 import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
 import getColumnSearchProps from "../common/getColumnSearchProps";
+import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
 function S3ObjectsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -213,7 +223,12 @@ function S3ObjectsTable({ awsProfile }) {
     <>
       {contextHolder}
       <Card
-        title={bucket}
+        title={
+          <Space>
+            <Icon component={BucketIcon} style={{ color: "#333" }} />
+            {bucket}
+          </Space>
+        }
         extra={[
           <Button key="home" onClick={() => navigate("/")}>
             <HomeFilled />
@@ -231,14 +246,17 @@ function S3ObjectsTable({ awsProfile }) {
           </Button>,
         ]}
       >
-        <S3Breadcrumb
-          bucket={bucket}
-          s3Prefix={curPrefix}
-          onChange={(prefix) => {
-            setObjects([]);
-            handleListObjectsByBucket(prefix, searchPrefixMap[prefix]);
-          }}
-        />
+        <div style={{marginTop: 5, marginBottom: 5 }}>
+          <S3Breadcrumb
+            bucket={bucket}
+            s3Prefix={curPrefix}
+            onChange={(prefix) => {
+              setObjects([]);
+              handleListObjectsByBucket(prefix, searchPrefixMap[prefix]);
+            }}
+          />
+        </div>
+
         {isTruncated && (
           <Alert
             message="There are still objects remaining, click Retrive More. Sort and Search are disabled due to more than 999+ objects."

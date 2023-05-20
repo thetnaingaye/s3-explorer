@@ -1,5 +1,5 @@
 import { CaretRightFilled, RollbackOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button } from "antd";
+import { Breadcrumb, Button, Space } from "antd";
 
 function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
   const handleBreadcrumbItemClick = (item) => {
@@ -13,13 +13,13 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
   const breadcrumbItems = [
     {
       title: (
-        <Button
-          type="link"
+        <span
+          onKeyDown={() => {}}
           onClick={() => handleBreadcrumbItemClick("")}
-          style={{ padding: 0, margin: 0 }}
+          style={{ color: "#1890ff", cursor: "pointer" }}
         >
           {bucket}
-        </Button>
+        </span>
       ),
     },
   ];
@@ -27,13 +27,13 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
     s3Prefix.split("/").forEach((item) => {
       breadcrumbItems.push({
         title: (
-          <Button
-            type="link"
+          <span
+            onKeyDown={() => {}}
             onClick={() => handleBreadcrumbItemClick(item)}
-            style={{ padding: 0, margin: 0 }}
+            style={{ color: "#1890ff", cursor: "pointer" }}
           >
             {item}
-          </Button>
+          </span>
         ),
       });
     });
@@ -49,31 +49,16 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
     }
   };
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "flex-start",
-      }}
-    >
-      <Breadcrumb
-        separator={
-          <Button
-            style={{ border: "none", padding: 0, margin: 0, cursor: "default" }}
-          >
-            <CaretRightFilled />
-          </Button>
-        }
-        items={breadcrumbItems}
-      />
-      <Button
-        type="link"
-        onClick={handleBack}
-        size="small"
-        disabled={!s3Prefix}
-        style={{ border: "none", padding: 3, margin: 0 }}
-      >
-        <RollbackOutlined /> Back
-      </Button>
+    <div>
+      <Space>
+        <Breadcrumb
+          separator={<CaretRightFilled style={{ paddingTop: 5 }} />}
+          items={breadcrumbItems}
+        />
+        <Button onClick={handleBack} size="small" disabled={!s3Prefix}>
+          <RollbackOutlined />
+        </Button>
+      </Space>
     </div>
   );
 }

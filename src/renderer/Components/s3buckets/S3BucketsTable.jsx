@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Button, Card, Table, Divider, message, Spin } from "antd";
-import {
+import { Button, Card, Table, Divider, message, Spin, Space } from "antd";
+import Icon, {
   HomeFilled,
   LoadingOutlined,
   RollbackOutlined,
   SyncOutlined,
 } from "@ant-design/icons";
 import getColumnSearchProps from "../common/getColumnSearchProps";
+import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
 function BucketsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -116,9 +117,10 @@ function BucketsTable({ awsProfile }) {
       {contextHolder}
       <Card
         title={
-          <span>
+          <Space>
+            <Icon component={BucketIcon} style={{ color: "#333" }} />
             Buckets <span>{buckets.length && `(${buckets.length})`}</span>
-          </span>
+          </Space>
         }
         extra={[
           <Button key="home" onClick={() => navigate("/")}>

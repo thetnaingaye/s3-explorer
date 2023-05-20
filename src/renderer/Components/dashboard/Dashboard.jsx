@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, Col, Row } from "antd";
-import { GoldenFilled, StarFilled } from "@ant-design/icons";
+import Icon, { StarFilled } from "@ant-design/icons";
+import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
 const { Meta } = Card;
 
@@ -23,7 +24,7 @@ function Dashboard() {
           >
             <Meta
               avatar={<StarFilled />}
-              title="Your Buckets"
+              title="My Buckets"
               description="list of bucket names saved for easy access"
             />
           </Card>
@@ -34,7 +35,17 @@ function Dashboard() {
             style={{ cursor: "pointer" }}
           >
             <Meta
-              avatar={<GoldenFilled />}
+              // avatar={<GoldenFilled />}
+              avatar={
+                <Row gutter={2}>
+                  <Col span={12}>
+                    <Icon component={BucketIcon} style={{ fontSize: "110%" }} />
+                  </Col>
+                  <Col span={12}>
+                    <Icon component={BucketIcon} style={{ fontSize: "70%" }} />
+                  </Col>
+                </Row>
+              }
               title="All Buckets"
               description="list of all buckets under current aws profile"
             />
