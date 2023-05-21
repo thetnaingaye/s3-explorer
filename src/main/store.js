@@ -1,9 +1,10 @@
-import { ipcMain } from "electron";
+import { ipcMain, app } from "electron";
 import Store from "electron-store";
 
-const store = new Store();
+export const store = new Store();
 
 store.set("version", "0.1.0");
+store.set("download_path", app.getPath("downloads"));
 
 export default () => {
   ipcMain.handle("get", (e, [k]) => store.get(k));

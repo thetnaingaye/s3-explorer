@@ -1,4 +1,6 @@
-import { Select } from "antd";
+import { SettingOutlined } from "@ant-design/icons";
+import { Button, Drawer, Select, Space } from "antd";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Header({
@@ -7,9 +9,22 @@ export default function Header({
   curAwsProfile,
 }) {
   const navigate = useNavigate();
+  const [settingDrawerOpen, setSettingDrawerOpen] = useState(false);
+  const [currentDownloadPath, setCurrentDownloadPath] = useState("");
+
   const handleProfileChange = (value) => {
     navigate("/");
     onProfileChange(value);
+  };
+
+  const handleSetDownloadPath = () => {
+    window.electron.ipcRenderer.sendMessage("ipc-s3", ["set_download_path"]);
+  };
+
+  const handleShowSettingDrawer = async () => {
+    const newPath = await window.electron.electronStore.get(["download_path"]);
+    setCurrentDownloadPath(newPath);
+    setSettingDrawerOpen(true);
   };
   return (
     <div>
@@ -30,22 +45,34 @@ export default function Header({
         <strong onClick={() => navigate("/")} onKeyDown={() => navigate("/")}>
           AWS S3 Explorer{" "}
         </strong>
-        {/* <span style={{ fontSize: "50%", letterSpacing: 1 }}>
-          powered by aws-sdk and aws-cli
-        </span> */}
         <div>
           <span style={{ fontSize: "65%" }}>aws profile: </span>
-          <Select
-            placeholder="select aws profile"
-            value={curAwsProfile}
-            style={{ width: 225, fontSize: "90%" }}
-            onChange={handleProfileChange}
-            options={awsProfiles.map((item) => ({
-              value: item,
-              label: item,
-            }))}
-          />
+          <Space>
+            <Select
+              placeholder="select aws profile"
+              value={curAwsProfile}
+              style={{ width: 225, fontSize: "90%" }}
+              onChange={handleProfileChange}
+              options={awsProfiles.map((item) => ({
+                value: item,
+                label: item,
+              }))}
+            />
+            <Button onClick={handleShowSettingDrawer}>
+              <SettingOutlined />
+            </Button>
+          </Space>
         </div>
+        <Drawer
+          title="Setting"
+          placement="right"
+          onClose={() => setSettingDrawerOpen(false)}
+          open={settingDrawerOpen}
+          width="50vw"
+        >
+          <div>Current download path : {currentDownloadPath}</div>
+          <Button onClick={handleSetDownloadPath}> set donwload path</Button>
+        </Drawer>
       </div>
     </div>
   );
