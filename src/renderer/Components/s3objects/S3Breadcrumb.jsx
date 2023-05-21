@@ -24,18 +24,26 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
     },
   ];
   if (s3Prefix) {
-    s3Prefix.split("/").forEach((item) => {
-      breadcrumbItems.push({
-        title: (
-          <span
-            onKeyDown={() => {}}
-            onClick={() => handleBreadcrumbItemClick(item)}
-            style={{ color: "#1890ff", cursor: "pointer" }}
-          >
-            {item}
-          </span>
-        ),
-      });
+    const splitPaths = s3Prefix.split("/");
+    splitPaths.forEach((item, idx) => {
+      const isLast = idx === splitPaths.length - 2;
+      if (isLast) {
+        breadcrumbItems.push({
+          title: <strong>{item}</strong>,
+        });
+      } else {
+        breadcrumbItems.push({
+          title: (
+            <span
+              onKeyDown={() => {}}
+              onClick={() => handleBreadcrumbItemClick(item)}
+              style={{ color: "#1890ff", cursor: "pointer" }}
+            >
+              {item}
+            </span>
+          ),
+        });
+      }
     });
   }
 
