@@ -14,7 +14,8 @@ module.exports = {
     "jsx-a11y/no-static-element-interactions": "off",
     "no-await-in-loop": "off",
     "prefer-destructuring": "off",
-    "no-restricted-syntax" : "off"
+    "no-restricted-syntax" : "off",
+    "no-loop-func": "off"
   },
   parserOptions: {
     ecmaVersion: 2020,

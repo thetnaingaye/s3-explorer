@@ -9,14 +9,14 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from "path";
-import { app, BrowserWindow, shell, ipcMain } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 // import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
 import log from "electron-log";
-import { download } from "electron-dl";
+
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
-import s3IpcMainHandler from "./s3";
+import s3IpcMainHandler from "./aws";
 import storeIpcMainHanlder from "./store";
 
 // AWS.config.getCredentials((err) => {
@@ -36,69 +36,6 @@ class AppUpdater {
 }
 
 let mainWindow = null;
-
-ipcMain.on("ipc-s3", async (event, arg) => {
-  const [action, payload] = arg;
-  switch (action) {
-    case "download_object":
-      // mainWindow.webContents.downloadURL(payload.presignedUrl);
-      await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
-        // saveAs: true,
-        openFolderWhenDone: true,
-        onProgress: (progress) => {
-          mainWindow.webContents.send("download-progress", [
-            {
-              filename: payload.filename,
-              progress,
-              presignedUrl: payload.presignedUrl,
-            },
-          ]);
-        },
-        onCompleted: (item) => {
-          mainWindow.webContents.send("download-complete", [
-            {
-              filename: payload.filename,
-              item,
-            },
-          ]);
-        },
-      });
-      // defaultPath = app.getPath("downloads");
-      // defaultFileName = payload.presignedUrl.split("/").pop().split("?")[0];
-      // customURL = dialog.showSaveDialogSync({
-      //   defaultPath: `${defaultPath}/${defaultFileName}`,
-      // });
-      // if (customURL) {
-      //   const filePath = customURL.split("/");
-      //   const filename = `${filePath.pop()}`;
-      //   const directory = filePath.join("/");
-      //   properties = { directory, filename };
-      //   await download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
-      //     ...properties,
-      //     onProgress: (progress) => {
-      //       mainWindow.webContents.send("download-progress", [
-      //         {
-      //           filename,
-      //           progress,
-      //           presignedUrl: payload.presignedUrl,
-      //         },
-      //       ]);
-      //     },
-      //     onCompleted: (item) => {
-      //       mainWindow.webContents.send("download-complete", [
-      //         {
-      //           filename,
-      //           item,
-      //         },
-      //       ]);
-      //     },
-      //   });
-      // }
-      break;
-    default:
-      break;
-  }
-});
 
 if (process.env.NODE_ENV === "production") {
   const sourceMapSupport = require("source-map-support");
@@ -203,6 +140,6 @@ app
       if (mainWindow === null) createWindow();
     });
     storeIpcMainHanlder();
-    s3IpcMainHandler();
+    s3IpcMainHandler(mainWindow);
   })
   .catch(console.log);

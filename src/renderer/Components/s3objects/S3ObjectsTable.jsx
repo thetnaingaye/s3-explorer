@@ -13,7 +13,6 @@ import {
   Drawer,
 } from "antd";
 import Icon, {
-  DownloadOutlined,
   FileOutlined,
   FolderFilled,
   HomeFilled,
@@ -21,12 +20,15 @@ import Icon, {
   RollbackOutlined,
   DeleteOutlined,
   EllipsisOutlined,
+  UploadOutlined,
+  FolderAddOutlined,
 } from "@ant-design/icons";
 import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 import S3UploadFile from "./S3UploadFile";
+import S3DownloadBtn from "./S3DownloadBtn";
 
 function S3ObjectsTable({ awsProfile }) {
   const [messageApi, contextHolder] = message.useMessage();
@@ -40,6 +42,7 @@ function S3ObjectsTable({ awsProfile }) {
   const [searchPrefixMap, setSearchPrefixMap] = useState({});
   const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
   const handleListObjectsByBucket = async (
     Prefix = "",
@@ -105,6 +108,7 @@ function S3ObjectsTable({ awsProfile }) {
       {
         filename: key.split("/").pop(),
         presignedUrl,
+        Key: key,
       },
     ]);
   };
@@ -127,6 +131,7 @@ function S3ObjectsTable({ awsProfile }) {
   };
 
   const deleteObject = async (key) => {
+    setLoading(true);
     try {
       await window.electron.aws.s3.deleteObject([
         {
@@ -139,10 +144,14 @@ function S3ObjectsTable({ awsProfile }) {
       handleRefresh();
     } catch (error) {
       message.error("failed to delete");
+    } finally {
+      setLoading(false);
+      setConfirmDeleteText("");
     }
   };
 
   const deleteFolder = async (key) => {
+    setLoading(true);
     try {
       await window.electron.aws.s3.deleteFolder([
         {
@@ -156,6 +165,8 @@ function S3ObjectsTable({ awsProfile }) {
       handleRefresh();
     } catch (err) {
       message.error(`failed to delete: ${err}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -244,33 +255,41 @@ function S3ObjectsTable({ awsProfile }) {
         // if (!row?.Key) return null;
         return (
           <Space>
-            <Button
+            <S3DownloadBtn
+              s3Key={row.Key}
               onClick={() => getObject(row.Key)}
-              size="small"
               disabled={row.StorageClass !== "STANDARD"}
-            >
-              <DownloadOutlined />
-              download
-            </Button>
+            />
 
             <Popover
               content={
-                <Button
-                  danger
-                  onClick={() => {
-                    if (row.Key) {
-                      deleteObject(row.Key);
-                    } else if (row.Prefix) {
-                      deleteFolder(row.Prefix);
-                    }
-                  }}
-                  size="small"
-                >
-                  <DeleteOutlined />
-                  delete object
-                </Button>
+                <Card title="Deletet Object" size="small">
+                  <p>
+                    To confirm deletion, type <em>permanently delete</em> in the
+                    text input field.
+                  </p>
+                  <Space>
+                    <Input
+                      onChange={(e) => setConfirmDeleteText(e.target.value)}
+                      style={{ width: 280 }}
+                    />
+                    <Button
+                      danger
+                      onClick={() => {
+                        if (row.Key) {
+                          deleteObject(row.Key);
+                        } else if (row.Prefix) {
+                          deleteFolder(row.Prefix);
+                        }
+                      }}
+                      disabled={confirmDeleteText !== "permanently delete"}
+                    >
+                      <DeleteOutlined />
+                      delete
+                    </Button>
+                  </Space>
+                </Card>
               }
-              title="Other actions"
               trigger="click"
             >
               <Button size="small">
@@ -400,9 +419,14 @@ function S3ObjectsTable({ awsProfile }) {
               }
               trigger="click"
             >
-              <Button>Create folder</Button>
+              <Button>
+                <FolderAddOutlined /> Create folder
+              </Button>
             </Popover>
-            <Button onClick={showUploadDrawer}>Upload files</Button>
+            <Button onClick={showUploadDrawer}>
+              <UploadOutlined />
+              Upload files
+            </Button>
           </Space>
         </div>
 
@@ -418,6 +442,7 @@ function S3ObjectsTable({ awsProfile }) {
           placement="right"
           open={uploadDrawerOpen}
           onClose={handleUploadDrawerClose}
+          width="40vw"
         >
           <S3UploadFile
             bucket={bucket}

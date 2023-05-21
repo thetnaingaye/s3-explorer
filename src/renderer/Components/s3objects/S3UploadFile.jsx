@@ -1,15 +1,12 @@
 import { UploadOutlined } from "@ant-design/icons";
-import { Button, message, Space, Upload } from "antd";
+import { Button, Card, message, Progress, Space, Upload } from "antd";
 import { useState } from "react";
 
 function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
+
   const handleUpload = async () => {
-    const formData = new FormData();
-    fileList.forEach((file) => {
-      formData.append("files[]", file);
-    });
     setUploading(true);
     try {
       const payload = {
@@ -27,26 +24,11 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
     } finally {
       setUploading(false);
     }
-
-    // You can use any AJAX library you like
-    // fetch("https://www.mocky.io/v2/5cc8019d300000980a055e76", {
-    //   method: "POST",
-    //   body: formData,
-    // })
-    //   .then((res) => res.json())
-    //   .then(() => {
-    //     setFileList([]);
-    //     message.success("upload successfully.");
-    //   })
-    //   .catch(() => {
-    //     message.error("upload failed.");
-    //   })
-    //   .finally(() => {
-    //     setUploading(false);
-    //   });
   };
 
   const props = {
+    showUploadList: !uploading,
+    multiple: true,
     onRemove: (file) => {
       const index = fileList.indexOf(file);
       const newFileList = fileList.slice();
@@ -59,22 +41,57 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
     },
     fileList,
   };
+
+  window.electron.ipcRenderer.on("upload-progress", (args) => {
+    const e = args[0];
+    const key = e.filePath;
+    const perc = (e.progress.loaded / e.progress.total) * 100;
+    fileList.forEach((file) => {
+      if (file.name === e.filename) {
+        file.percent = parseInt(perc, 10);
+      }
+    });
+    setFileList([...fileList]);
+  });
   return (
     <>
-      <Upload {...props}>
-        <Button icon={<UploadOutlined />}>Select File</Button>
+      <Upload {...props} disabled={uploading}>
+        <Button icon={<UploadOutlined />} disabled={uploading}>
+          Select File
+        </Button>
       </Upload>
-      <Button
-        type="primary"
-        onClick={handleUpload}
-        disabled={fileList.length === 0}
-        loading={uploading}
+      <div
         style={{
           marginTop: 16,
         }}
       >
-        {uploading ? "Uploading" : "Start Upload"}
-      </Button>
+        <Button
+          type="primary"
+          onClick={handleUpload}
+          disabled={fileList.length === 0}
+          loading={uploading}
+        >
+          {uploading ? "Uploading" : "Start Upload"}
+        </Button>
+      </div>
+      {uploading && (
+        <>
+          {fileList.map((file) => {
+            return (
+              <Card style={{ marginTop: 5 }} key={file.uid} size="small">
+                <div style={{ textAlign: "left" }}>
+                  <Space>
+                    <UploadOutlined />
+                    {file.name}
+                  </Space>
+
+                  <Progress percent={file.percent} />
+                </div>
+              </Card>
+            );
+          })}
+        </>
+      )}
     </>
   );
 }

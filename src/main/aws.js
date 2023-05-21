@@ -1,4 +1,4 @@
-import { ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import AWS from "aws-sdk";
 import {
   GetObjectCommand,
@@ -11,9 +11,39 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
-import fs from "fs";
-import MimeTypes from "mime-types";
-import path from "path";
+import utils from "./utils/utils";
+import DownloadQueue from "./utils/downloadQueue";
+
+let mainWindow;
+const downloadQueue = new DownloadQueue();
+
+ipcMain.on("ipc-s3", async (event, arg) => {
+  const [action, payload] = arg;
+  switch (action) {
+    case "download_object":
+      downloadQueue.push({
+        win: BrowserWindow.getFocusedWindow(),
+        url: payload.presignedUrl,
+        options: {
+          // saveAs: true,
+          openFolderWhenDone: true,
+          onProgress: (progress) => {
+            mainWindow.webContents.send(`download-progress-[${payload.Key}]`, [
+              {
+                filename: payload.filename,
+                progress,
+                presignedUrl: payload.presignedUrl,
+                Key: payload.Key,
+              },
+            ]);
+          },
+        },
+      });
+      break;
+    default:
+      break;
+  }
+});
 
 // const handleGetBucketRegion = async (e, args) => {
 //   const [payload] = args;
@@ -172,12 +202,6 @@ const handleListProfiles = async () => {
   return profiles;
 };
 
-function LocalFileData(filePath) {
-  this.fileString = fs.readFileSync(filePath, "utf8");
-  this.name = path.basename(filePath);
-  this.type = MimeTypes.lookup(path.extname(filePath)) || undefined;
-}
-
 const handleUploadFiles = async (e, args) => {
   const [payload] = args;
   const filePaths = payload.filePaths;
@@ -191,7 +215,7 @@ const handleUploadFiles = async (e, args) => {
   });
 
   for (const filePath of filePaths) {
-    const file = new LocalFileData(filePath);
+    const file = utils.getFileData(filePath);
     const fileName = file.name;
     const objectKey = payload.prefix + fileName;
 
@@ -202,11 +226,17 @@ const handleUploadFiles = async (e, args) => {
         credentials,
         Bucket: payload.bucket,
         Key: objectKey,
-        Body: file.fileString,
+        Body: file.stream,
       },
     });
-    upload.on("httpUploadProgress", (process) => {
-      console.log("progress", fileName, process);
+    upload.on("httpUploadProgress", (progress) => {
+      mainWindow.webContents.send("upload-progress", [
+        {
+          filePath,
+          filename: fileName,
+          progress,
+        },
+      ]);
     });
     await upload.promise();
   }
@@ -258,7 +288,8 @@ const handlePutObject = async (e, args) => {
   await s3.send(command);
 };
 
-export default () => {
+export default (window) => {
+  mainWindow = window;
   ipcMain.handle("aws:s3:listObjects", handleListObjectsV2);
   ipcMain.handle("aws:s3:getObject", handleGetObject);
   ipcMain.handle("aws:s3:listBuckets", handleListBuckets);
