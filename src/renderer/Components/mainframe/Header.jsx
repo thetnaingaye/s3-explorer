@@ -2,6 +2,7 @@ import { SettingOutlined } from "@ant-design/icons";
 import { Button, Drawer, Select, Space } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Setting from "./Setting";
 
 export default function Header({
   awsProfiles,
@@ -9,23 +10,12 @@ export default function Header({
   curAwsProfile,
 }) {
   const navigate = useNavigate();
-  const [settingDrawerOpen, setSettingDrawerOpen] = useState(false);
-  const [currentDownloadPath, setCurrentDownloadPath] = useState("");
 
   const handleProfileChange = (value) => {
     navigate("/");
     onProfileChange(value);
   };
 
-  const handleSetDownloadPath = () => {
-    window.electron.ipcRenderer.sendMessage("ipc-s3", ["set_download_path"]);
-  };
-
-  const handleShowSettingDrawer = async () => {
-    const newPath = await window.electron.electronStore.get(["download_path"]);
-    setCurrentDownloadPath(newPath);
-    setSettingDrawerOpen(true);
-  };
   return (
     <div>
       <div
@@ -58,21 +48,9 @@ export default function Header({
                 label: item,
               }))}
             />
-            <Button onClick={handleShowSettingDrawer}>
-              <SettingOutlined />
-            </Button>
+            <Setting />
           </Space>
         </div>
-        <Drawer
-          title="Setting"
-          placement="right"
-          onClose={() => setSettingDrawerOpen(false)}
-          open={settingDrawerOpen}
-          width="50vw"
-        >
-          <div>Current download path : {currentDownloadPath}</div>
-          <Button onClick={handleSetDownloadPath}> set donwload path</Button>
-        </Drawer>
       </div>
     </div>
   );

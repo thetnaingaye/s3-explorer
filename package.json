@@ -1,11 +1,13 @@
 {
+  "name": "s3-explorer",
   "description": "AWS S3 Explorer",
-  "license": "MIT",
+  "version": "0.1.0",
   "author": {
     "name": "Thet Naing Aye",
     "email": "mmu1tn@gmail.com",
     "url": "https://github.com/thetnaingaye/s3-explorer"
   },
+  "license": "MIT",
   "main": "./src/main/main.js",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",

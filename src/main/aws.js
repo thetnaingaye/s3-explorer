@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, dialog } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import AWS from "aws-sdk";
 import {
   GetObjectCommand,
@@ -27,7 +27,7 @@ ipcMain.on("ipc-s3", async (event, arg) => {
         url: payload.presignedUrl,
         options: {
           // saveAs: true,
-          directory: store.get("download_path"),
+          directory: store.get("setting").download_path,
           openFolderWhenDone: true,
           onProgress: (progress) => {
             mainWindow.webContents.send(`download-progress-[${payload.Key}]`, [
@@ -41,13 +41,6 @@ ipcMain.on("ipc-s3", async (event, arg) => {
           },
         },
       });
-      break;
-    case "set_download_path":
-      const path = dialog.showOpenDialogSync({
-        properties: ["openDirectory"],
-      });
-      console.log("donw load paht", path);
-      store.set("download_path", path[0])
       break;
     default:
       break;

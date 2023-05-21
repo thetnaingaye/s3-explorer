@@ -1,10 +1,5 @@
-import {
-  app,
-  Menu,
-  shell,
-  BrowserWindow,
-  MenuItemConstructorOptions,
-} from "electron";
+import { app, Menu, BrowserWindow, MenuItemConstructorOptions } from "electron";
+import { version } from "../../package.json";
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -12,7 +7,7 @@ interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
 }
 
 const myAppName = "S3-Explorer";
-const myAppVersion = "Version 0.1.0";
+const myAppVersion = `Version ${version}`;
 
 export default class MenuBuilder {
   mainWindow: BrowserWindow;

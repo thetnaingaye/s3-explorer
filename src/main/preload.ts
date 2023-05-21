@@ -50,6 +50,10 @@ const electronHandler = {
     set: (args: unknown[]) => ipcRenderer.invoke("set", args),
     delete: (args: unknown[]) => ipcRenderer.invoke("delete", args),
   },
+  setting: {
+    setDownloadPath: (args: unknown[]) =>
+      ipcRenderer.invoke("setting:setDownloadPath", args),
+  },
 };
 
 contextBridge.exposeInMainWorld("electron", electronHandler);

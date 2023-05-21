@@ -18,6 +18,7 @@ import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
 import s3IpcMainHandler from "./aws";
 import storeIpcMainHanlder from "./store";
+import settingIpcMainHandler from "./setting";
 
 // AWS.config.getCredentials((err) => {
 //   if (err) console.log(err.stack);
@@ -141,5 +142,6 @@ app
     });
     storeIpcMainHanlder();
     s3IpcMainHandler(mainWindow);
+    settingIpcMainHandler();
   })
   .catch(console.log);
