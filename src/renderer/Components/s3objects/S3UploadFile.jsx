@@ -1,6 +1,7 @@
-import { UploadOutlined } from "@ant-design/icons";
+import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Card, message, Progress, Space, Upload } from "antd";
 import { useState } from "react";
+const { Dragger } = Upload;
 
 function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   const [fileList, setFileList] = useState([]);
@@ -27,6 +28,7 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   };
 
   const props = {
+    disabled: uploading,
     showUploadList: !uploading,
     multiple: true,
     onRemove: (file) => {
@@ -36,7 +38,7 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
       setFileList(newFileList);
     },
     beforeUpload: (file) => {
-      setFileList([...fileList, file]);
+      setFileList((prevFileList) => [...prevFileList, file]);
       return false;
     },
     fileList,
@@ -55,11 +57,24 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   });
   return (
     <>
-      <Upload {...props} disabled={uploading}>
+      {/* <Upload {...props} disabled={uploading}>
         <Button icon={<UploadOutlined />} disabled={uploading}>
           Select File
         </Button>
-      </Upload>
+      </Upload> */}
+      <div>
+        <Dragger {...props}>
+          <p className="ant-upload-drag-icon">
+            <InboxOutlined />
+          </p>
+          <p className="ant-upload-text">
+            Click or drag file to this area to upload
+          </p>
+          <p className="ant-upload-hint">
+            Support for a single or bulk upload.
+          </p>
+        </Dragger>
+      </div>
       <div
         style={{
           marginTop: 16,
