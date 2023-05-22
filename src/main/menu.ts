@@ -209,6 +209,15 @@ export default class MenuBuilder {
         ],
       },
       {
+        label: "Edit",
+        submenu: [
+          { role: "cut" },
+          { role: "copy" },
+          { role: "paste" },
+          { role: "delete" },
+        ],
+      },
+      {
         label: "&View",
         submenu:
           process.env.NODE_ENV === "development" ||
