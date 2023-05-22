@@ -31,9 +31,9 @@ import S3UploadFile from "./S3UploadFile";
 import S3DownloadBtn from "./S3DownloadBtn";
 
 function S3ObjectsTable({ awsProfile }) {
+  const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const { bucket } = useParams();
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
@@ -62,15 +62,15 @@ function S3ObjectsTable({ awsProfile }) {
       }
       const data = await window.electron.aws.s3.listObjects([payload]);
       const { contents, IsTruncated, NextContinuationToken } = data;
-      let normalisedContents = contents;
-      if (Prefix) {
-        const resolvedPrefix = searchPrefix
-          ? `${Prefix}${searchPrefix}`
-          : Prefix;
-        normalisedContents = contents.filter(
-          (x) => x && x.Key !== resolvedPrefix
-        );
-      }
+      const normalisedContents = [];
+      contents.forEach((content) => {
+        if (!content) return;
+        const fileName = content.Key?.split("/").pop();
+        if (fileName) {
+          content.fileName = fileName;
+          normalisedContents.push(content);
+        }
+      });
       let mergeData = [...normalisedContents, ...data.prefixes];
       mergeData = mergeData.filter((x) => x);
       mergeData.forEach((item) => {
@@ -188,42 +188,35 @@ function S3ObjectsTable({ awsProfile }) {
       defaultSortOrder: "ascend",
       ...getColumnSearchProps("Name"),
       render: (text, row) => {
-        let resolvedPrefix = "";
-        const searchPrefix = searchPrefixMap[curPrefix];
-        if (searchPrefix?.slice(-1) === "/") {
-          resolvedPrefix = `${curPrefix}${searchPrefix}`;
-        } else {
-          resolvedPrefix = `${curPrefix}`;
-        }
-        if (row?.Prefix) {
+        if (row.fileName) {
           return (
             <div>
-              <FolderFilled />
-              <span
-                style={{
-                  cursor: "pointer",
-                  padding: "4px 15px",
-                  color: "#1890ff",
-                }}
-                onClick={() => {
-                  setObjects([]);
-                  handleListObjectsByBucket(
-                    row?.Prefix,
-                    searchPrefixMap[row?.Prefix]
-                  );
-                }}
-                onKeyDown={() => {}}
-              >
-                {row.Prefix.replace(resolvedPrefix, "")}
+              <FileOutlined />
+              <span type="link" style={{ padding: "4px 15px" }}>
+                {row.fileName}
               </span>
             </div>
           );
         }
         return (
           <div>
-            <FileOutlined />
-            <span type="link" style={{ padding: "4px 15px" }}>
-              {text.replace(resolvedPrefix, "")}
+            <FolderFilled />
+            <span
+              style={{
+                cursor: "pointer",
+                padding: "4px 15px",
+                color: "#1890ff",
+              }}
+              onClick={() => {
+                setObjects([]);
+                handleListObjectsByBucket(
+                  row?.Prefix,
+                  searchPrefixMap[row?.Prefix]
+                );
+              }}
+              onKeyDown={() => {}}
+            >
+              {row.Prefix.split("/").slice(-2)}
             </span>
           </div>
         );
