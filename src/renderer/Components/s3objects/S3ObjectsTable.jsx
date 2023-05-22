@@ -64,7 +64,12 @@ function S3ObjectsTable({ awsProfile }) {
       const { contents, IsTruncated, NextContinuationToken } = data;
       let normalisedContents = contents;
       if (Prefix) {
-        normalisedContents = contents.filter((x) => x && x.Key !== Prefix);
+        const resolvedPrefix = searchPrefix
+          ? `${Prefix}${searchPrefix}`
+          : Prefix;
+        normalisedContents = contents.filter(
+          (x) => x && x.Key !== resolvedPrefix
+        );
       }
       let mergeData = [...normalisedContents, ...data.prefixes];
       mergeData = mergeData.filter((x) => x);
@@ -183,6 +188,13 @@ function S3ObjectsTable({ awsProfile }) {
       defaultSortOrder: "ascend",
       ...getColumnSearchProps("Name"),
       render: (text, row) => {
+        let resolvedPrefix = "";
+        const searchPrefix = searchPrefixMap[curPrefix];
+        if (searchPrefix?.slice(-1) === "/") {
+          resolvedPrefix = `${curPrefix}${searchPrefix}`;
+        } else {
+          resolvedPrefix = `${curPrefix}`;
+        }
         if (row?.Prefix) {
           return (
             <div>
@@ -202,10 +214,7 @@ function S3ObjectsTable({ awsProfile }) {
                 }}
                 onKeyDown={() => {}}
               >
-                {row?.Prefix.replace(
-                  curPrefix.replace(searchPrefixMap[row?.Prefix], ""),
-                  ""
-                )}
+                {row.Prefix.replace(resolvedPrefix, "")}
               </span>
             </div>
           );
@@ -214,7 +223,7 @@ function S3ObjectsTable({ awsProfile }) {
           <div>
             <FileOutlined />
             <span type="link" style={{ padding: "4px 15px" }}>
-              {text.replace(curPrefix, "")}
+              {text.replace(resolvedPrefix, "")}
             </span>
           </div>
         );
