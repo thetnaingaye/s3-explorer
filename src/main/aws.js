@@ -30,14 +30,21 @@ ipcMain.on("ipc-s3", async (event, arg) => {
           directory: store.get("setting").download_path,
           openFolderWhenDone: true,
           onProgress: (progress) => {
-            mainWindow.webContents.send(`download-progress-[${payload.Key}]`, [
-              {
-                filename: payload.filename,
-                progress,
-                presignedUrl: payload.presignedUrl,
-                Key: payload.Key,
-              },
-            ]);
+            try {
+              mainWindow.webContents.send(
+                `download-progress-[${payload.Key}]`,
+                [
+                  {
+                    filename: payload.filename,
+                    progress,
+                    presignedUrl: payload.presignedUrl,
+                    Key: payload.Key,
+                  },
+                ]
+              );
+            } catch (error) {
+              console.log("Download progress error", error);
+            }
           },
         },
       });

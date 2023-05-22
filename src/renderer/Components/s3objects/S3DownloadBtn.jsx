@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Progress, Space } from "antd";
+import { Button, Progress, Space, message } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 
 function S3DownloadBtn({ s3Key, onClick, disabled }) {
@@ -21,7 +21,11 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
     }
   });
 
-  return (
+  return showProgress ? (
+    <Button style={{ width: 110, fontSize: "90%" }} size="small">
+      <Progress percent={perc.toFixed(0)} size="small" />
+    </Button>
+  ) : (
     <Button
       onClick={() => {
         setShowProgress(true);
@@ -31,18 +35,10 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
       style={{ width: 110 }}
       disabled={disabled}
     >
-      {showProgress ? (
-        <Progress
-          percent={perc.toFixed(0)}
-          style={{ width: 90, fontSize: "80%" }}
-          size="small"
-        />
-      ) : (
-        <Space>
-          <DownloadOutlined />
-          download
-        </Space>
-      )}
+      <Space>
+        <DownloadOutlined />
+        download
+      </Space>
     </Button>
   );
 }
