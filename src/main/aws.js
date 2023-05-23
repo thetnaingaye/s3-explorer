@@ -78,7 +78,7 @@ const handleGetBucketRegion = async (e, args) => {
     credentials,
   });
   const requestObject = s3V2.headBucket({
-    Bucket: payload.bucket,
+    Bucket: payload.bucket || payload.Bucket,
   });
   let region;
   requestObject.on("httpHeaders", (statusCode, headers) => {
@@ -179,8 +179,10 @@ const handleGetObject = async (e, args) => {
   const credentials = new AWS.SharedIniFileCredentials({
     profile: payload.awsProfile,
   });
+  const { region } = await handleGetBucketRegion({}, args);
   const s3 = new S3Client({
     credentials,
+    region,
   });
 
   const command = new GetObjectCommand({
