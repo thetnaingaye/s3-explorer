@@ -288,8 +288,10 @@ const handlePutObject = async (e, args) => {
   const credentials = new AWS.SharedIniFileCredentials({
     profile: payload.awsProfile,
   });
+  const { region } = await handleGetBucketRegion({}, args);
   const s3 = new S3Client({
     credentials,
+    region,
   });
 
   const command = new PutObjectCommand({
