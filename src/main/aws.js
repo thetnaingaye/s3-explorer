@@ -1,4 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
+import url from "url";
 import AWS from "aws-sdk";
 import {
   GetObjectCommand,
@@ -11,42 +12,37 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { loadSharedConfigFiles } from "@aws-sdk/shared-ini-file-loader";
+import { download } from "electron-dl";
 import utils from "./utils/utils";
-import DownloadQueue from "./utils/downloadQueue";
 import { store } from "./store";
 
 let mainWindow;
-const downloadQueue = new DownloadQueue();
+
+const setUpDownloadListener = () => {
+  const donloadListener = (e, item, webContents) => {
+    // console.log("item", item)
+    item.on("updated", () => {
+      const s3Key = decodeURI(url.parse(item.getURL()).pathname.substring(1));
+      const downloadProgress = {
+        progress: {
+          percent: item.getReceivedBytes() / item.getTotalBytes(),
+        },
+        Key: s3Key,
+      };
+      webContents.send(`download-progress-[${s3Key}]`, [downloadProgress]);
+    });
+  };
+  mainWindow.webContents.session.on("will-download", donloadListener);
+};
 
 ipcMain.on("ipc-s3", async (event, arg) => {
   const [action, payload] = arg;
   switch (action) {
     case "download_object":
-      downloadQueue.push({
-        win: BrowserWindow.getFocusedWindow(),
-        url: payload.presignedUrl,
-        options: {
-          // saveAs: true,
-          directory: store.get("setting").download_path,
-          openFolderWhenDone: true,
-          onProgress: (progress) => {
-            try {
-              mainWindow.webContents.send(
-                `download-progress-[${payload.Key}]`,
-                [
-                  {
-                    filename: payload.filename,
-                    progress,
-                    presignedUrl: payload.presignedUrl,
-                    Key: payload.Key,
-                  },
-                ]
-              );
-            } catch (error) {
-              console.log("Download progress error", error);
-            }
-          },
-        },
+      download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
+        // saveAs: true,
+        directory: store.get("setting").download_path,
+        openFolderWhenDone: true,
       });
       break;
     default:
@@ -303,6 +299,8 @@ const handlePutObject = async (e, args) => {
 
 export default (window) => {
   mainWindow = window;
+  setUpDownloadListener();
+
   ipcMain.handle("aws:s3:listObjects", handleListObjectsV2);
   ipcMain.handle("aws:s3:getObject", handleGetObject);
   ipcMain.handle("aws:s3:listBuckets", handleListBuckets);
