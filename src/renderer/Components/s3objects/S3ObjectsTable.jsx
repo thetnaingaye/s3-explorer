@@ -43,6 +43,11 @@ function S3ObjectsTable({ awsProfile }) {
   const [uploadDrawerOpen, setUploadDrawerOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [confirmDeleteText, setConfirmDeleteText] = useState("");
+  const [bucketRegion, setBucketRegion] = useState("");
+
+  const getBucketRegion = async (payload) => {
+    return window.electron.aws.s3.getBucketRegion([payload]);
+  };
 
   const getObjects = useCallback(async (payload) => {
     const data = await window.electron.aws.s3.listObjects([payload]);
@@ -76,6 +81,7 @@ function S3ObjectsTable({ awsProfile }) {
         bucket,
         prefix: searchPrefix ? `${Prefix}${searchPrefix}` : Prefix,
         awsProfile,
+        bucketRegion,
       };
       if (continuationToken) {
         payload.ContinuationToken = continueToken;
@@ -98,35 +104,41 @@ function S3ObjectsTable({ awsProfile }) {
 
   useEffect(() => {
     setLoading(true);
-    const payload = {
-      bucket,
-      awsProfile,
-    };
-    getObjects(payload)
-      .then(({ mergeData, IsTruncated, NextContinuationToken }) => {
+    const init = async () => {
+      const payload = {
+        bucket,
+        awsProfile,
+      };
+      try {
+        const { region } = await getBucketRegion(payload);
+        payload.bucketRegion = region;
+        const { mergeData, IsTruncated, NextContinuationToken } =
+          await getObjects(payload);
         setLoading(false);
+        setBucketRegion(region);
         setObjects(mergeData);
         setIsTruncated(IsTruncated);
         setContinuationToken(NextContinuationToken);
-        return null;
-      })
-      .catch((error) => {
+      } catch (error) {
         messageApi.error(error?.message);
         setLoading(false);
-      });
+      }
+    };
+    init();
   }, [awsProfile, bucket, getObjects, messageApi]);
 
   const handleRefresh = () => {
-    setObjects([]);
+    // setObjects([]);
     getObjectsByPrefix(curPrefix, searchPrefixMap[curPrefix]);
   };
 
   const handleDownloadObject = async (key) => {
-    const presignedUrl = await window.electron.aws.s3.getObject([
+    const presignedUrl = await window.electron.aws.s3.getObjectPresignedUrl([
       {
         Bucket: bucket,
         Key: key,
         awsProfile,
+        bucketRegion,
       },
     ]);
 
@@ -148,12 +160,14 @@ function S3ObjectsTable({ awsProfile }) {
           Bucket: bucket,
           Key: key,
           awsProfile,
+          bucketRegion,
         },
       ]);
       message.info("object deleted successfully");
       handleRefresh();
     } catch (error) {
       message.error("failed to delete");
+      setLoading(false);
     } finally {
       setLoading(false);
       setConfirmDeleteText("");
@@ -169,6 +183,7 @@ function S3ObjectsTable({ awsProfile }) {
           prefix: key,
           Key: key,
           awsProfile,
+          bucketRegion,
         },
       ]);
       message.info("object deleted successfully");
@@ -187,6 +202,7 @@ function S3ObjectsTable({ awsProfile }) {
           Bucket: bucket,
           Key: `${curPrefix}${newFolderName}/`,
           awsProfile,
+          bucketRegion,
         },
       ]);
       message.info("folder created successfully");

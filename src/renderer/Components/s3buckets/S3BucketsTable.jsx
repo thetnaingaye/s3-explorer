@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Card, Table, Divider, message, Spin, Space } from "antd";
 import Icon, {
@@ -11,60 +11,64 @@ import getColumnSearchProps from "../common/getColumnSearchProps";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
 function BucketsTable({ awsProfile }) {
+  const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const listBuckets = async () => {
-    try {
-      setLoading(true);
-      const data = await window.electron.aws.s3.listBuckets([
-        {
-          awsProfile,
-        },
-      ]);
-      setBuckets(data);
-      setLoading(false);
-      return data;
-    } catch (error) {
-      messageApi.error(error?.message);
-      setLoading(false);
-      return [];
-    }
-  };
+  const [refresh, setRefresh] = useState(false);
 
-  const getRegions = async (data) => {
-    const values = await Promise.allSettled(
-      data.map((item) => {
-        return window.electron.aws.s3.getBucketRegion([
-          {
-            awsProfile,
-            bucket: item.Name,
-          },
-        ]);
-      })
-    );
-    const regionMap = {};
-    values.forEach((v) => {
-      regionMap[v.value.bucket] = v.value.region;
-    });
-    const newBuckets = data.map((bucket) => {
-      bucket.region = regionMap[bucket.Name];
-      return bucket;
-    });
-    setBuckets([...newBuckets]);
-  };
+  const listBuckets = useCallback(async () => {
+    const data = await window.electron.aws.s3.listBuckets([
+      {
+        awsProfile,
+      },
+    ]);
+    return data;
+  }, [awsProfile]);
+
+  const getRegions = useCallback(
+    async (data) => {
+      const values = await Promise.allSettled(
+        data.map((item) => {
+          return window.electron.aws.s3.getBucketRegion([
+            {
+              awsProfile,
+              bucket: item.Name,
+            },
+          ]);
+        })
+      );
+      return values;
+    },
+    [awsProfile]
+  );
 
   useEffect(() => {
+    setRefresh(false);
+    setLoading(true);
     listBuckets()
       .then((data) => {
-        getRegions(data);
+        setBuckets(data);
+        setLoading(false);
+        return getRegions(data);
+      })
+      .then((data) => {
+        const regionMap = {};
+        data.forEach((v) => {
+          regionMap[v.value.bucket] = v.value.region;
+        });
+        setBuckets((prevBuckets) =>
+          prevBuckets.map((bucket) => {
+            bucket.region = regionMap[bucket.Name];
+            return bucket;
+          })
+        );
         return null;
       })
-      .catch(() => {
-        message.error("failed to get buckets");
+      .catch((error) => {
+        messageApi.error(error?.message);
       });
-  }, []);
+  }, [listBuckets, getRegions, messageApi, refresh]);
 
   const columns = [
     {
@@ -133,7 +137,7 @@ function BucketsTable({ awsProfile }) {
             Back
           </Button>,
           <Divider key="d2" type="vertical" />,
-          <Button onClick={listBuckets} key="refresh">
+          <Button onClick={() => setRefresh(true)} key="refresh">
             <SyncOutlined spin={loading} />
             Refresh
           </Button>,

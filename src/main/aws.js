@@ -135,10 +135,9 @@ const handleListObjectsV2 = async (e, args) => {
     profile: payload.awsProfile,
   });
 
-  const { region } = await handleGetBucketRegion({}, args);
   const s3 = new S3Client({
     credentials,
-    region,
+    region: payload.bucketRegion,
   });
 
   const command = new ListObjectsV2Command({
@@ -170,15 +169,14 @@ const handleListObjectsV2 = async (e, args) => {
   };
 };
 
-const handleGetObject = async (e, args) => {
+const handleGetObjectPresignedUrl = async (e, args) => {
   const [payload] = args;
   const credentials = new AWS.SharedIniFileCredentials({
     profile: payload.awsProfile,
   });
-  const { region } = await handleGetBucketRegion({}, args);
   const s3 = new S3Client({
     credentials,
-    region,
+    region: payload.bucketRegion,
   });
 
   const command = new GetObjectCommand({
@@ -256,6 +254,7 @@ const handleDeleteObject = async (e, args) => {
   });
   const s3 = new S3Client({
     credentials,
+    region: payload.bucketRegion,
   });
   const command = new DeleteObjectCommand({
     Bucket: payload.Bucket,
@@ -271,6 +270,7 @@ const handleDeleteFolder = async (e, args) => {
   });
   const s3 = new S3Client({
     credentials,
+    region: payload.bucketRegion,
   });
   const command = new DeleteObjectCommand({
     Bucket: payload.bucket,
@@ -284,10 +284,9 @@ const handlePutObject = async (e, args) => {
   const credentials = new AWS.SharedIniFileCredentials({
     profile: payload.awsProfile,
   });
-  const { region } = await handleGetBucketRegion({}, args);
   const s3 = new S3Client({
     credentials,
-    region,
+    region: payload.bucketRegion,
   });
 
   const command = new PutObjectCommand({
@@ -302,7 +301,7 @@ export default (window) => {
   setUpDownloadListener();
 
   ipcMain.handle("aws:s3:listObjects", handleListObjectsV2);
-  ipcMain.handle("aws:s3:getObject", handleGetObject);
+  ipcMain.handle("aws:s3:getObjectPresignedUrl", handleGetObjectPresignedUrl);
   ipcMain.handle("aws:s3:listBuckets", handleListBuckets);
   ipcMain.handle("aws:s3:getBucketRegion", handleGetBucketRegion);
   ipcMain.handle("aws:s3:uploadFiles", handleUploadFiles);
