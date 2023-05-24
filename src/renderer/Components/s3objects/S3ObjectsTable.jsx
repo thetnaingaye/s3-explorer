@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Alert,
@@ -32,8 +32,8 @@ import S3DownloadBtn from "./S3DownloadBtn";
 
 function S3ObjectsTable({ awsProfile }) {
   const navigate = useNavigate();
-  const [messageApi, contextHolder] = message.useMessage();
   const { bucket } = useParams();
+  const [messageApi, contextHolder] = message.useMessage();
   const [loading, setLoading] = useState(false);
   const [objects, setObjects] = useState([]);
   const [curPrefix, setCurrPrefix] = useState("");
@@ -44,7 +44,27 @@ function S3ObjectsTable({ awsProfile }) {
   const [newFolderName, setNewFolderName] = useState("");
   const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
-  const handleListObjectsByBucket = async (
+  const getObjects = useCallback(async (payload) => {
+    const data = await window.electron.aws.s3.listObjects([payload]);
+    const { contents, IsTruncated, NextContinuationToken } = data;
+    const normalisedContents = [];
+    contents.forEach((content) => {
+      if (!content) return;
+      const fileName = content.Key?.split("/").pop();
+      if (fileName) {
+        content.fileName = fileName;
+        normalisedContents.push(content);
+      }
+    });
+    let mergeData = [...normalisedContents, ...data.prefixes];
+    mergeData = mergeData.filter((x) => x);
+    mergeData.forEach((item) => {
+      item.Name = item.Key || item.Prefix;
+    });
+    return { mergeData, IsTruncated, NextContinuationToken };
+  }, []);
+
+  const getObjectsByPrefix = async (
     Prefix = "",
     searchPrefix = "",
     continueToken = ""
@@ -60,22 +80,8 @@ function S3ObjectsTable({ awsProfile }) {
       if (continuationToken) {
         payload.ContinuationToken = continueToken;
       }
-      const data = await window.electron.aws.s3.listObjects([payload]);
-      const { contents, IsTruncated, NextContinuationToken } = data;
-      const normalisedContents = [];
-      contents.forEach((content) => {
-        if (!content) return;
-        const fileName = content.Key?.split("/").pop();
-        if (fileName) {
-          content.fileName = fileName;
-          normalisedContents.push(content);
-        }
-      });
-      let mergeData = [...normalisedContents, ...data.prefixes];
-      mergeData = mergeData.filter((x) => x);
-      mergeData.forEach((item) => {
-        item.Name = item.Key || item.Prefix;
-      });
+      const { mergeData, IsTruncated, NextContinuationToken } =
+        await getObjects(payload);
       if (continueToken) {
         setObjects([...objects, ...mergeData]);
       } else {
@@ -91,15 +97,31 @@ function S3ObjectsTable({ awsProfile }) {
   };
 
   useEffect(() => {
-    handleListObjectsByBucket();
-  }, [bucket]);
+    setLoading(true);
+    const payload = {
+      bucket,
+      awsProfile,
+    };
+    getObjects(payload)
+      .then(({ mergeData, IsTruncated, NextContinuationToken }) => {
+        setLoading(false);
+        setObjects(mergeData);
+        setIsTruncated(IsTruncated);
+        setContinuationToken(NextContinuationToken);
+        return null;
+      })
+      .catch((error) => {
+        messageApi.error(error?.message);
+        setLoading(false);
+      });
+  }, [awsProfile, bucket, getObjects, messageApi]);
 
   const handleRefresh = () => {
     setObjects([]);
-    handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+    getObjectsByPrefix(curPrefix, searchPrefixMap[curPrefix]);
   };
 
-  const getObject = async (key) => {
+  const handleDownloadObject = async (key) => {
     const presignedUrl = await window.electron.aws.s3.getObject([
       {
         Bucket: bucket,
@@ -118,24 +140,7 @@ function S3ObjectsTable({ awsProfile }) {
     ]);
   };
 
-  const hanldeCreateFolder = async () => {
-    try {
-      await window.electron.aws.s3.putObject([
-        {
-          Bucket: bucket,
-          Key: `${curPrefix}${newFolderName}/`,
-          awsProfile,
-        },
-      ]);
-      message.info("folder created successfully");
-      setNewFolderName("");
-      handleRefresh();
-    } catch (error) {
-      message.error("failed to create folder");
-    }
-  };
-
-  const deleteObject = async (key) => {
+  const handleDeleteObject = async (key) => {
     setLoading(true);
     try {
       await window.electron.aws.s3.deleteObject([
@@ -155,7 +160,7 @@ function S3ObjectsTable({ awsProfile }) {
     }
   };
 
-  const deleteFolder = async (key) => {
+  const handleDeleteFolder = async (key) => {
     setLoading(true);
     try {
       await window.electron.aws.s3.deleteFolder([
@@ -172,6 +177,34 @@ function S3ObjectsTable({ awsProfile }) {
       message.error(`failed to delete: ${err}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const hanldeCreateFolder = async () => {
+    try {
+      await window.electron.aws.s3.putObject([
+        {
+          Bucket: bucket,
+          Key: `${curPrefix}${newFolderName}/`,
+          awsProfile,
+        },
+      ]);
+      message.info("folder created successfully");
+      setNewFolderName("");
+      handleRefresh();
+    } catch (error) {
+      message.error("failed to create folder");
+    }
+  };
+
+  const handlePrefixInputChange = (e) => {
+    const searchPrefix = e.target.value;
+    setSearchPrefixMap({
+      ...searchPrefixMap,
+      [curPrefix]: searchPrefix,
+    });
+    if (!searchPrefix) {
+      getObjectsByPrefix(curPrefix);
     }
   };
 
@@ -209,10 +242,7 @@ function S3ObjectsTable({ awsProfile }) {
               }}
               onClick={() => {
                 setObjects([]);
-                handleListObjectsByBucket(
-                  row?.Prefix,
-                  searchPrefixMap[row?.Prefix]
-                );
+                getObjectsByPrefix(row?.Prefix, searchPrefixMap[row?.Prefix]);
               }}
               onKeyDown={() => {}}
             >
@@ -259,7 +289,7 @@ function S3ObjectsTable({ awsProfile }) {
           <Space>
             <S3DownloadBtn
               s3Key={row.Key}
-              onClick={() => getObject(row.Key)}
+              onClick={() => handleDownloadObject(row.Key)}
               disabled={row.StorageClass !== "STANDARD"}
             />
 
@@ -279,9 +309,9 @@ function S3ObjectsTable({ awsProfile }) {
                       danger
                       onClick={() => {
                         if (row.Key) {
-                          deleteObject(row.Key);
+                          handleDeleteObject(row.Key);
                         } else if (row.Prefix) {
-                          deleteFolder(row.Prefix);
+                          handleDeleteFolder(row.Prefix);
                         }
                       }}
                       disabled={confirmDeleteText !== "permanently delete"}
@@ -312,24 +342,6 @@ function S3ObjectsTable({ awsProfile }) {
       return col;
     });
   }
-
-  const handlePrefixInputChange = (e) => {
-    const searchPrefix = e.target.value;
-    setSearchPrefixMap({
-      ...searchPrefixMap,
-      [curPrefix]: searchPrefix,
-    });
-    if (!searchPrefix) {
-      handleListObjectsByBucket(curPrefix);
-    }
-  };
-  const showUploadDrawer = () => {
-    setUploadDrawerOpen(true);
-  };
-
-  const handleUploadDrawerClose = () => {
-    setUploadDrawerOpen(false);
-  };
 
   return (
     <>
@@ -364,7 +376,7 @@ function S3ObjectsTable({ awsProfile }) {
             s3Prefix={curPrefix}
             onChange={(prefix) => {
               setObjects([]);
-              handleListObjectsByBucket(prefix, searchPrefixMap[prefix]);
+              getObjectsByPrefix(prefix, searchPrefixMap[prefix]);
             }}
           />
         </div>
@@ -377,7 +389,7 @@ function S3ObjectsTable({ awsProfile }) {
             action={
               <Button
                 onClick={() =>
-                  handleListObjectsByBucket(
+                  getObjectsByPrefix(
                     curPrefix,
                     searchPrefixMap[curPrefix],
                     continuationToken
@@ -404,7 +416,7 @@ function S3ObjectsTable({ awsProfile }) {
             placeholder="Find objects by prefix:"
             onPressEnter={() => {
               setObjects([]);
-              handleListObjectsByBucket(curPrefix, searchPrefixMap[curPrefix]);
+              getObjectsByPrefix(curPrefix, searchPrefixMap[curPrefix]);
             }}
           />
           <Space>
@@ -425,7 +437,7 @@ function S3ObjectsTable({ awsProfile }) {
                 <FolderAddOutlined /> Create folder
               </Button>
             </Popover>
-            <Button onClick={showUploadDrawer}>
+            <Button onClick={() => setUploadDrawerOpen(true)}>
               <UploadOutlined />
               Upload files
             </Button>
@@ -443,7 +455,7 @@ function S3ObjectsTable({ awsProfile }) {
           title="Upload files"
           placement="right"
           open={uploadDrawerOpen}
-          onClose={handleUploadDrawerClose}
+          onClose={() => setUploadDrawerOpen(false)}
           width="40vw"
         >
           <S3UploadFile
