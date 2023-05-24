@@ -31,7 +31,7 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
     return () => {
       unsubscribe();
     };
-  });
+  }, [showProgress, s3Key]);
 
   return showProgress ? (
     <Button style={{ width: 110, fontSize: "90%" }} size="small">

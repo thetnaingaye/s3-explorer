@@ -1,6 +1,7 @@
 import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Card, message, Progress, Space, Upload } from "antd";
 import { useEffect, useState } from "react";
+
 const { Dragger } = Upload;
 
 function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
@@ -49,7 +50,7 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
       "upload-progress",
       (args) => {
         const e = args[0];
-        const key = e.filePath;
+        // const key = e.filePath;
         const perc = (e.progress.loaded / e.progress.total) * 100;
         fileList.forEach((file) => {
           if (file.name === e.filename) {
@@ -63,7 +64,7 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
     return () => {
       unsubscribe();
     };
-  });
+  }, [fileList]);
 
   return (
     <>
