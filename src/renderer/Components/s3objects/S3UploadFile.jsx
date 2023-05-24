@@ -1,6 +1,6 @@
 import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
 import { Button, Card, message, Progress, Space, Upload } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 const { Dragger } = Upload;
 
 function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
@@ -44,24 +44,29 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
     fileList,
   };
 
-  window.electron.ipcRenderer.on("upload-progress", (args) => {
-    const e = args[0];
-    const key = e.filePath;
-    const perc = (e.progress.loaded / e.progress.total) * 100;
-    fileList.forEach((file) => {
-      if (file.name === e.filename) {
-        file.percent = parseInt(perc, 10);
+  useEffect(() => {
+    const unsubscribe = window.electron.ipcRenderer.on(
+      "upload-progress",
+      (args) => {
+        const e = args[0];
+        const key = e.filePath;
+        const perc = (e.progress.loaded / e.progress.total) * 100;
+        fileList.forEach((file) => {
+          if (file.name === e.filename) {
+            file.percent = parseInt(perc, 10);
+          }
+        });
+        setFileList([...fileList]);
       }
-    });
-    setFileList([...fileList]);
+    );
+
+    return () => {
+      unsubscribe();
+    };
   });
+
   return (
     <>
-      {/* <Upload {...props} disabled={uploading}>
-        <Button icon={<UploadOutlined />} disabled={uploading}>
-          Select File
-        </Button>
-      </Upload> */}
       <div>
         <Dragger {...props}>
           <p className="ant-upload-drag-icon">

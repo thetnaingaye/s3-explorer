@@ -1,33 +1,35 @@
 import { useEffect, useState } from "react";
-import { Button, Progress, Space, message } from "antd";
+import { Button, Progress, Space } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 
 function S3DownloadBtn({ s3Key, onClick, disabled }) {
   const [showProgress, setShowProgress] = useState(false);
   const [perc, setPerc] = useState(0);
-  const unsubscribe = window.electron.ipcRenderer.on(
-    `download-progress-[${s3Key}]`,
-    (args) => {
-      if (args[0].Key !== s3Key) return;
-      const curPerc = args[0].progress.percent * 100;
-      if (s3Key === args[0].Key) {
-        if (!showProgress) {
-          setShowProgress(true);
+  useEffect(() => {
+    const unsubscribe = window.electron.ipcRenderer.on(
+      `download-progress-[${s3Key}]`,
+      (args) => {
+        if (args[0].Key !== s3Key) return;
+        const curPerc = args[0].progress.percent * 100;
+        if (s3Key === args[0].Key) {
+          if (!showProgress) {
+            setShowProgress(true);
+          }
+        }
+        setPerc(curPerc);
+        if (curPerc === 100) {
+          setTimeout(() => {
+            setShowProgress(false);
+            unsubscribe();
+            setPerc(0);
+          }, 1000);
         }
       }
-      setPerc(curPerc);
-      if (curPerc === 100) {
-        setTimeout(() => {
-          setShowProgress(false);
-          unsubscribe();
-          setPerc(0);
-        }, 1000);
-      }
-    }
-  );
-  useEffect(() => {
-    unsubscribe();
-  }, [perc]);
+    );
+    return () => {
+      unsubscribe();
+    };
+  });
 
   return showProgress ? (
     <Button style={{ width: 110, fontSize: "90%" }} size="small">
