@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from "electron";
+import { ipcMain } from "electron";
 import url from "url";
 import AWS from "aws-sdk";
 import {
@@ -39,7 +39,7 @@ ipcMain.on("ipc-s3", async (event, arg) => {
   const [action, payload] = arg;
   switch (action) {
     case "download_object":
-      download(BrowserWindow.getFocusedWindow(), payload.presignedUrl, {
+      download(mainWindow, payload.presignedUrl, {
         // saveAs: true,
         directory: store.get("setting").download_path,
         openFolderWhenDone: true,

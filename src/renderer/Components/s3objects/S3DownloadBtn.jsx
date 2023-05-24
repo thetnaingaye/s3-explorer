@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Button, Progress, Space } from "antd";
+import { Button, Progress } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
 
 function S3DownloadBtn({ s3Key, onClick, disabled }) {
   const [showProgress, setShowProgress] = useState(false);
   const [perc, setPerc] = useState(0);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on(
       `download-progress-[${s3Key}]`,
@@ -20,6 +21,7 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
         if (curPerc === 100) {
           setTimeout(() => {
             setShowProgress(false);
+            setLoading(false);
             unsubscribe();
             setPerc(0);
           }, 1000);
@@ -38,17 +40,17 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
   ) : (
     <Button
       onClick={() => {
-        setShowProgress(true);
+        // setShowProgress(true);
+        setLoading(true);
         onClick();
       }}
       size="small"
       style={{ width: 110 }}
       disabled={disabled}
+      loading={loading}
+      icon={<DownloadOutlined />}
     >
-      <Space>
-        <DownloadOutlined />
-        download
-      </Space>
+      download
     </Button>
   );
 }
