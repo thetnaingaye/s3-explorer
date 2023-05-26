@@ -455,7 +455,7 @@ function S3ObjectsTable({ awsProfile }) {
             </Popover>
             <Button onClick={() => setUploadDrawerOpen(true)}>
               <UploadOutlined />
-              Upload files
+              Upload
             </Button>
           </Space>
         </div>
@@ -468,11 +468,11 @@ function S3ObjectsTable({ awsProfile }) {
           size="small"
         />
         <Drawer
-          title="Upload files"
+          title="Upload"
           placement="right"
           open={uploadDrawerOpen}
           onClose={() => setUploadDrawerOpen(false)}
-          width="40vw"
+          width="55vw"
         >
           <S3UploadFile
             bucket={bucket}

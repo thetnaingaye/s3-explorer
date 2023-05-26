@@ -1,5 +1,15 @@
-import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Card, message, Progress, Space, Upload } from "antd";
+import { InboxOutlined, MinusCircleFilled } from "@ant-design/icons";
+import {
+  Button,
+  Col,
+  Divider,
+  List,
+  message,
+  Progress,
+  Radio,
+  Row,
+  Upload,
+} from "antd";
 import { useEffect, useState } from "react";
 
 const { Dragger } = Upload;
@@ -7,6 +17,10 @@ const { Dragger } = Upload;
 function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadType, setUploadType] = useState("files");
+  const [pageSize, setPageSize] = useState(10);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [currentUploadFile, setCurrentUploadFile] = useState("");
 
   const handleUpload = async () => {
     setUploading(true);
@@ -15,7 +29,10 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
         awsProfile,
         bucket,
         prefix,
-        filePaths: fileList.map((f) => f.path),
+        filePaths: fileList.map((f) => ({
+          webkitRelativePath: f.webkitRelativePath,
+          path: f.path,
+        })),
       };
       await window.electron.aws.s3.uploadFiles([payload]);
       setFileList([]);
@@ -28,9 +45,14 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
     }
   };
 
+  const handleRemoveFile = (uid) => {
+    setFileList(fileList.filter((f) => f.uid !== uid));
+  };
+
   const props = {
     disabled: uploading,
-    showUploadList: !uploading,
+    // showUploadList: !uploading,
+    showUploadList: false,
     multiple: true,
     onRemove: (file) => {
       const index = fileList.indexOf(file);
@@ -51,10 +73,18 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
       (args) => {
         const e = args[0];
         // const key = e.filePath;
-        const perc = (e.progress.loaded / e.progress.total) * 100;
+        let perc;
+        if (e.progress.total === 0) {
+          perc = 100;
+        } else perc = (e.progress.loaded / e.progress.total) * 100;
+        if (perc === 100) {
+          setUploadedCount((prevCount) => prevCount + 1);
+        }
+
         fileList.forEach((file) => {
           if (file.name === e.filename) {
             file.percent = parseInt(perc, 10);
+            setCurrentUploadFile(file);
           }
         });
         setFileList([...fileList]);
@@ -69,23 +99,42 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   return (
     <>
       <div>
-        <Dragger {...props}>
+        <span>Select Upload Mode: </span>
+        <Radio.Group
+          value={uploadType}
+          style={{ marginBottom: 5 }}
+          onChange={(e) => setUploadType(e.target.value)}
+        >
+          <Radio.Button value="files">Upload Files</Radio.Button>
+          <Radio.Button value="folder">Upload Folder</Radio.Button>
+        </Radio.Group>
+        <Dragger {...props} directory={uploadType === "folder"}>
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
           </p>
           <p className="ant-upload-text">
-            Click or drag file to this area to upload
+            Click or drag {uploadType} to this area to upload
           </p>
-          <p className="ant-upload-hint">
-            Support for a single or bulk upload.
-          </p>
+          {uploadType === "files" && (
+            <p className="ant-upload-hint">
+              Support for a single or bulk upload.
+            </p>
+          )}
         </Dragger>
       </div>
       <div
         style={{
           marginTop: 16,
+          marginBottom: 16,
         }}
       >
+        <Button
+          type="link"
+          onClick={() => setFileList([])}
+          disabled={uploading}
+        >
+          Clear all
+        </Button>
         <Button
           type="primary"
           onClick={handleUpload}
@@ -95,23 +144,54 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
           {uploading ? "Uploading" : "Start Upload"}
         </Button>
       </div>
-      {uploading && (
-        <>
-          {fileList.map((file) => {
-            return (
-              <Card style={{ marginTop: 5 }} key={file.uid} size="small">
-                <div style={{ textAlign: "left" }}>
-                  <Space>
-                    <UploadOutlined />
-                    {file.name}
-                  </Space>
-
-                  <Progress percent={file.percent} />
-                </div>
-              </Card>
-            );
-          })}
-        </>
+      {fileList.length > 0 && (
+        <List
+          size="small"
+          header={
+            <div>
+              Total: {uploadedCount} / {fileList.length}
+              {uploading && (
+                <>
+                  <Divider type="vertical" />
+                  <span style={{ color: "darkorange" }}>
+                    current upload file: <em>{currentUploadFile.name}</em>
+                  </span>
+                </>
+              )}
+            </div>
+          }
+          bordered
+          dataSource={fileList}
+          pagination={{
+            pageSize,
+            onShowSizeChange: (current, size) => setPageSize(size),
+          }}
+          renderItem={(file) => (
+            <List.Item key={file.uid}>
+              <Row style={{ width: "100%" }}>
+                <Col span={1}>
+                  <Button
+                    disabled={file.percent > 0}
+                    onClick={() => handleRemoveFile(file.uid)}
+                    icon={<MinusCircleFilled />}
+                    size="small"
+                    style={{ border: "none" }}
+                  />
+                </Col>
+                <Col span={19}> {file.webkitRelativePath || file.name}</Col>
+                <Col span={4}>
+                  {file.percent ? (
+                    <Progress percent={file.percent} size="small" />
+                  ) : (
+                    <em style={{ color: "#ccc", fontSize: "small" }}>
+                      upload pending
+                    </em>
+                  )}
+                </Col>
+              </Row>
+            </List.Item>
+          )}
+        />
       )}
     </>
   );

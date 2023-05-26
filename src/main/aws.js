@@ -220,9 +220,14 @@ const handleUploadFiles = async (e, args) => {
   });
 
   for (const filePath of filePaths) {
-    const file = utils.getFileData(filePath);
+    const file = utils.getFileData(filePath.path);
     const fileName = file.name;
-    const objectKey = payload.prefix + fileName;
+    let objectKey;
+    if (filePath.webkitRelativePath) {
+      objectKey = payload.prefix + filePath.webkitRelativePath;
+    } else {
+      objectKey = payload.prefix + fileName;
+    }
 
     // Use S3 ManagedUpload class as it supports multipart uploads
     const upload = new AWS.S3.ManagedUpload({
