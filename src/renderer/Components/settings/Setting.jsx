@@ -4,22 +4,33 @@ import {
   UsergroupAddOutlined,
 } from "@ant-design/icons";
 import { Button, Checkbox, Drawer, List, Tabs } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AwsProfile from "./aws/AwsProfile";
 
 export default function Setting({ onChange }) {
   const [settingDrawerOpen, setSettingDrawerOpen] = useState(false);
   const [currentDownloadPath, setCurrentDownloadPath] = useState("");
+  const [openFolderWhenDone, setOpenFolderWhenDone] = useState(false);
+
+  useEffect(() => {
+    async function init() {
+      const setting = await window.electron.electronStore.get(["setting"]);
+      setOpenFolderWhenDone(setting.download_open_folder_when_done === "Y");
+    }
+    init();
+  }, []);
 
   const handleSetDownloadPath = async () => {
     await window.electron.setting.setDownloadPath();
     const setting = await window.electron.electronStore.get(["setting"]);
     setCurrentDownloadPath(setting.download_path);
   };
+
   const handleDownloadOpenFolderCheck = async (e) => {
     const setting = await window.electron.electronStore.get(["setting"]);
     setting.download_open_folder_when_done = e.target.checked ? "Y" : "N";
     await window.electron.electronStore.set(["setting", setting]);
+    setOpenFolderWhenDone(e.target.checked);
   };
 
   const handleShowSettingDrawer = async () => {
@@ -63,7 +74,10 @@ export default function Setting({ onChange }) {
             <List.Item.Meta
               avatar={
                 <Button size="small" type="link">
-                  <Checkbox onChange={handleDownloadOpenFolderCheck} />
+                  <Checkbox
+                    onChange={handleDownloadOpenFolderCheck}
+                    checked={openFolderWhenDone}
+                  />
                 </Button>
               }
               title="Open Folder When Done"
