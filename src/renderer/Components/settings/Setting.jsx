@@ -3,7 +3,7 @@ import {
   SettingOutlined,
   UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { Button, Drawer, List, Tabs } from "antd";
+import { Button, Checkbox, Drawer, List, Tabs } from "antd";
 import { useState } from "react";
 import AwsProfile from "./aws/AwsProfile";
 
@@ -15,6 +15,11 @@ export default function Setting({ onChange }) {
     await window.electron.setting.setDownloadPath();
     const setting = await window.electron.electronStore.get(["setting"]);
     setCurrentDownloadPath(setting.download_path);
+  };
+  const handleDownloadOpenFolderCheck = async (e) => {
+    const setting = await window.electron.electronStore.get(["setting"]);
+    setting.download_open_folder_when_done = e.target.checked ? "Y" : "N";
+    await window.electron.electronStore.set(["setting", setting]);
   };
 
   const handleShowSettingDrawer = async () => {
@@ -38,19 +43,31 @@ export default function Setting({ onChange }) {
       ),
       children: (
         <List>
-          <List.Item title="Download Folder">
+          <List.Item>
             <List.Item.Meta
               avatar={
                 <Button
                   key="download"
                   onClick={handleSetDownloadPath}
                   size="small"
+                  type="link"
                 >
                   <EditOutlined />
                 </Button>
               }
               title="Download Folder"
               description={currentDownloadPath}
+            />
+          </List.Item>
+          <List.Item>
+            <List.Item.Meta
+              avatar={
+                <Button size="small" type="link">
+                  <Checkbox onChange={handleDownloadOpenFolderCheck} />
+                </Button>
+              }
+              title="Open Folder When Done"
+              description="Open donwload folder when download file is completed."
             />
           </List.Item>
         </List>

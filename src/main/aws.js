@@ -42,7 +42,8 @@ ipcMain.on("ipc-s3", async (event, arg) => {
       download(mainWindow, payload.presignedUrl, {
         // saveAs: true,
         directory: store.get("setting").download_path,
-        openFolderWhenDone: true,
+        openFolderWhenDone:
+          store.get("setting").download_open_folder_when_done === "Y",
       });
       break;
     default:

@@ -10,10 +10,17 @@ const defaultSetting = {
 };
 const appSetting = store.get("setting", {});
 
+// set default values
 if (!appSetting.download_path) {
   appSetting.download_path = app.getPath("downloads");
   store.set("setting", appSetting);
 }
+
+if (!appSetting.download_open_folder_when_done) {
+  appSetting.download_open_folder_when_done = "Y";
+  store.set("setting", appSetting);
+}
+
 if (!appSetting.useCliCredentials) {
   appSetting.useCliCredentials = defaultSetting.useCliCredentials;
   store.set("setting", appSetting);
