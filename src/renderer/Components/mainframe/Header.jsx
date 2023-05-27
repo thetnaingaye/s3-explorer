@@ -1,18 +1,21 @@
-import { SettingOutlined } from "@ant-design/icons";
 import { Button, Drawer, Select, Space } from "antd";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Setting from "./Setting";
+import { useNavigate, useLocation } from "react-router-dom";
+import Setting from "../settings/Setting";
 
 export default function Header({
   awsProfiles,
   onProfileChange,
   curAwsProfile,
+  onSettingChange,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleProfileChange = (value) => {
-    navigate("/");
+    if (location.pathname.startsWith("/objects")) {
+      navigate("/");
+    }
     onProfileChange(value);
   };
 
@@ -48,7 +51,7 @@ export default function Header({
                 label: item,
               }))}
             />
-            <Setting />
+            <Setting onChange={onSettingChange} />
           </Space>
         </div>
       </div>

@@ -17,7 +17,6 @@ function Dashboard() {
     >
       <Row gutter={[16, 16]}>
         <Col>
-          {" "}
           <Card
             onClick={() => navigate("/buckets/user")}
             style={{ cursor: "pointer" }}

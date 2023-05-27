@@ -21,14 +21,14 @@ import Icon, {
 } from "@ant-design/icons";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
 
-function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
+function BucketsTable({ awsProfile, onProfileChange }) {
   const [messageApi, contextHolder] = message.useMessage();
   const [buckets, setBuckets] = useState([]);
   const [bucketsByProfile, setBucketsByProfile] = useState({});
   const [loading, setLoading] = useState(false);
   const [newBucketName, setNewBucketName] = useState("");
-  const [selectedAwsProfile, setSelectedAwsProfile] = useState();
   const navigate = useNavigate();
+
   const listBuckets = async () => {
     try {
       setLoading(true);
@@ -57,13 +57,18 @@ function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
 
   const saveNewBucket = async () => {
     setLoading(true);
-    if (buckets.map((bucket) => bucket.Name).includes(newBucketName)) {
-      message.error("bucket is already in your list.");
-      return;
+
+    for (const bucket of buckets) {
+      if (bucket.Name === newBucketName && bucket.AwsProfile === awsProfile) {
+        message.error("bucket is already in your list.");
+        setLoading(false);
+        return;
+      }
     }
+
     const newBuckets = [
       ...buckets,
-      { Name: newBucketName, AwsProfile: selectedAwsProfile },
+      { Name: newBucketName, AwsProfile: awsProfile },
     ];
     await window.electron.electronStore.set(["buckets", newBuckets]);
     message.success("bucket is added to your list successfully.");
@@ -89,7 +94,11 @@ function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
         style={{ boxShadow: "none" }}
         title={
           <span>
-            Buckets <span>{buckets.length && `(${buckets.length})`}</span>
+            Buckets{" "}
+            <span>
+              {bucketsByProfile[awsProfile]?.length &&
+                `(${bucketsByProfile[awsProfile]?.length})`}
+            </span>
           </span>
         }
         extra={[
@@ -116,66 +125,56 @@ function BucketsTable({ awsProfile, awsProfiles, onProfileChange }) {
               onChange={(e) => setNewBucketName(e.target.value)}
               placeholder="enter bucket name"
             />
-            <Select
-              value={selectedAwsProfile}
-              placeholder="select aws profile"
-              style={{ width: 225, fontSize: "90%" }}
-              onChange={setSelectedAwsProfile}
-              options={awsProfiles.map((item) => ({
-                value: item,
-                label: item,
-              }))}
-            />
             <Button
               onClick={saveNewBucket}
-              disabled={!(newBucketName && selectedAwsProfile)}
+              disabled={!(newBucketName && awsProfile)}
             >
               + Add to your list
             </Button>
           </Space>
         </Card>
         <Row gutter={[16, 16]} style={{ marginTop: 15 }}>
-          {Object.keys(bucketsByProfile).map((profile) => {
-            return (
-              <Col xs={{ span: 24 }} lg={{ span: 12 }} key={profile}>
-                <Card title={profile} key={profile} size="small">
-                  <List
-                    bordered
-                    dataSource={bucketsByProfile[profile]}
-                    renderItem={(bucket) => (
-                      <List.Item
-                        actions={[
-                          <Tooltip key="remove" title="remove from your list">
-                            <MinusCircleOutlined
-                              onClick={() => handleDeleteBucket(bucket.Name)}
-                              size="small"
-                            />
-                          </Tooltip>,
-                        ]}
-                      >
-                        <span
-                          style={{ cursor: "pointer", color: "#1890ff" }}
-                          onKeyDown={() => {}}
-                          onClick={() => {
-                            onProfileChange(bucket.AwsProfile);
-                            navigate(`/objects/${bucket.Name}`);
-                          }}
-                        >
-                          <Space>
-                            <Icon
-                              component={BucketIcon}
-                              style={{ color: "#333" }}
-                            />
-                            {bucket.Name}
-                          </Space>
-                        </span>
-                      </List.Item>
-                    )}
-                  />
-                </Card>
-              </Col>
-            );
-          })}
+          <Col xs={{ span: 24 }} lg={{ span: 12 }} key={awsProfile}>
+            <Card
+              title={<span>{awsProfile}</span>}
+              key={awsProfile}
+              size="small"
+            >
+              <List
+                bordered
+                dataSource={bucketsByProfile[awsProfile]}
+                renderItem={(bucket) => (
+                  <List.Item
+                    actions={[
+                      <Tooltip key="remove" title="remove from your list">
+                        <MinusCircleOutlined
+                          onClick={() => handleDeleteBucket(bucket.Name)}
+                          size="small"
+                        />
+                      </Tooltip>,
+                    ]}
+                  >
+                    <span
+                      style={{ cursor: "pointer", color: "#1890ff" }}
+                      onKeyDown={() => {}}
+                      onClick={() => {
+                        onProfileChange(bucket.AwsProfile);
+                        navigate(`/objects/${bucket.Name}`);
+                      }}
+                    >
+                      <Space>
+                        <Icon
+                          component={BucketIcon}
+                          style={{ color: "#333" }}
+                        />
+                        {bucket.Name}
+                      </Space>
+                    </span>
+                  </List.Item>
+                )}
+              />
+            </Card>
+          </Col>
         </Row>
       </Card>
     </>

@@ -311,7 +311,7 @@ function S3ObjectsTable({ awsProfile }) {
 
             <Popover
               content={
-                <Card title="Deletet Object" size="small">
+                <Card title="Delete Object" size="small">
                   <p>
                     To confirm deletion, type <em>permanently delete</em> in the
                     text input field.

@@ -43,6 +43,12 @@ const electronHandler = {
     },
     profile: {
       list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),
+      add: (args: unknown[]) => ipcRenderer.invoke("aws:profile:add", args),
+      get: (args: unknown[]) => ipcRenderer.invoke("aws:profile:get", args),
+      update: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:profile:update", args),
+      delete: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:profile:delete", args),
     },
   },
   electronStore: {

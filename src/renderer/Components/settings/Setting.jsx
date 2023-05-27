@@ -1,12 +1,13 @@
 import {
-  DownloadOutlined,
   EditOutlined,
   SettingOutlined,
+  UsergroupAddOutlined,
 } from "@ant-design/icons";
-import { Button, Drawer, List } from "antd";
+import { Button, Drawer, List, Tabs } from "antd";
 import { useState } from "react";
+import AwsProfile from "./aws/AwsProfile";
 
-export default function Setting() {
+export default function Setting({ onChange }) {
   const [settingDrawerOpen, setSettingDrawerOpen] = useState(false);
   const [currentDownloadPath, setCurrentDownloadPath] = useState("");
 
@@ -22,18 +23,20 @@ export default function Setting() {
     setSettingDrawerOpen(true);
   };
 
-  return (
-    <div>
-      <Button onClick={handleShowSettingDrawer}>
-        <SettingOutlined />
-      </Button>
-      <Drawer
-        title="Setting"
-        placement="right"
-        onClose={() => setSettingDrawerOpen(false)}
-        open={settingDrawerOpen}
-        width="45vw"
-      >
+  const handleSettingDrawerClose = () => {
+    onChange();
+    setSettingDrawerOpen(false);
+  };
+  const tabItems = [
+    {
+      key: "1",
+      label: (
+        <span>
+          <SettingOutlined />
+          General
+        </span>
+      ),
+      children: (
         <List>
           <List.Item title="Download Folder">
             <List.Item.Meta
@@ -51,6 +54,32 @@ export default function Setting() {
             />
           </List.Item>
         </List>
+      ),
+    },
+    {
+      key: "2",
+      label: (
+        <span>
+          <UsergroupAddOutlined />
+          User Profiles
+        </span>
+      ),
+      children: <AwsProfile />,
+    },
+  ];
+  return (
+    <div>
+      <Button onClick={handleShowSettingDrawer}>
+        <SettingOutlined />
+      </Button>
+      <Drawer
+        title="Setting"
+        placement="right"
+        onClose={handleSettingDrawerClose}
+        open={settingDrawerOpen}
+        width="65vw"
+      >
+        <Tabs defaultActiveKey="1" items={tabItems} />
       </Drawer>
     </div>
   );

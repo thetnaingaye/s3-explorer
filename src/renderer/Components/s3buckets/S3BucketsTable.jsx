@@ -67,6 +67,7 @@ function BucketsTable({ awsProfile }) {
       })
       .catch((error) => {
         messageApi.error(error?.message);
+        setLoading(false);
       });
   }, [listBuckets, getRegions, messageApi, refresh]);
 

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { Progress, Space, message } from "antd";
-import { DownloadOutlined, UploadOutlined } from "@ant-design/icons";
+import { message } from "antd";
 import Header from "./Header";
 import S3BucketsTable from "../s3buckets/S3BucketsTable";
 import S3BucketsTableUser from "../s3buckets/S3BucketsTableUser";
@@ -12,24 +11,31 @@ export default function Mainframe() {
   const [messageApi, contextHolder] = message.useMessage();
   const [awsProfiles, setAwsProfiles] = useState([]);
   const [curAwsProfile, setCurAwsProfile] = useState("");
-
   const [loading, setLoading] = useState(false);
 
-  const listProfiles = async () => {
+  const listProfiles = useCallback(async () => {
     try {
       setLoading(true);
       const profiles = await window.electron.aws.profile.list();
-      setAwsProfiles(Object.keys(profiles.configFile));
+      if (profiles?.length) {
+        setAwsProfiles(profiles);
+        setCurAwsProfile(profiles[0]);
+      } else {
+        setCurAwsProfile("");
+        messageApi.warning(
+          "AWS Profile has not configured. Please add profile to start using application."
+        );
+      }
       setLoading(false);
     } catch (error) {
       messageApi.error(error?.message);
       setLoading(false);
     }
-  };
+  }, [messageApi]);
 
   useEffect(() => {
     listProfiles();
-  }, []);
+  }, [listProfiles]);
 
   return (
     <>
@@ -37,6 +43,7 @@ export default function Mainframe() {
       <Header
         curAwsProfile={curAwsProfile}
         awsProfiles={awsProfiles}
+        onSettingChange={listProfiles}
         onProfileChange={setCurAwsProfile}
         loading={loading}
       />

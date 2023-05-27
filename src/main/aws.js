@@ -64,12 +64,18 @@ ipcMain.on("ipc-s3", async (event, arg) => {
 //   const { LocationConstraint } = await s3.send(cmdBucketLocation);
 //   return LocationConstraint;
 // };
+const getCredentials = (profile) => {
+  if (store.get("setting").useCliCredentials === "Y") {
+    return new AWS.SharedIniFileCredentials({
+      profile,
+    });
+  }
+  return store.get("awsCredentials").find((item) => item.profile === profile);
+};
 
 const handleGetBucketRegion = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  const credentials = getCredentials(payload.awsProfile);
   const s3V2 = new AWS.S3({
     credentials,
   });
@@ -131,10 +137,7 @@ const handleGetBucketRegion = async (e, args) => {
 
 const handleListObjectsV2 = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
-
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: payload.bucketRegion,
@@ -171,9 +174,7 @@ const handleListObjectsV2 = async (e, args) => {
 
 const handleGetObjectPresignedUrl = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: payload.bucketRegion,
@@ -189,9 +190,10 @@ const handleGetObjectPresignedUrl = async (e, args) => {
 
 const handleListBuckets = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  if (!payload.awsProfile) {
+    throw new Error("invalid aws profile");
+  }
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: "us-east-1", // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
@@ -202,19 +204,11 @@ const handleListBuckets = async (e, args) => {
   return Buckets;
 };
 
-const handleListProfiles = async () => {
-  const profiles = await loadSharedConfigFiles();
-  return profiles;
-};
-
 const handleUploadFiles = async (e, args) => {
   const [payload] = args;
   const filePaths = payload.filePaths;
 
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
-
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new AWS.S3({
     credentials,
   });
@@ -254,9 +248,7 @@ const handleUploadFiles = async (e, args) => {
 
 const handleDeleteObject = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: payload.bucketRegion,
@@ -270,9 +262,7 @@ const handleDeleteObject = async (e, args) => {
 
 const handleDeleteFolder = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: payload.bucketRegion,
@@ -286,9 +276,7 @@ const handleDeleteFolder = async (e, args) => {
 
 const handlePutObject = async (e, args) => {
   const [payload] = args;
-  const credentials = new AWS.SharedIniFileCredentials({
-    profile: payload.awsProfile,
-  });
+  const credentials = getCredentials(payload.awsProfile);
   const s3 = new S3Client({
     credentials,
     region: payload.bucketRegion,
@@ -299,6 +287,66 @@ const handlePutObject = async (e, args) => {
     Key: payload.Key,
   });
   await s3.send(command);
+};
+
+const handleListProfiles = async () => {
+  if (store.get("setting").useCliCredentials === "Y") {
+    const profiles = await loadSharedConfigFiles();
+    return Object.keys(profiles.configFile);
+  }
+  return store.get("awsProfileNames");
+};
+
+const handleAddProfile = async (e, args) => {
+  const newProfile = args[0];
+  const awsCredentials = store.get("awsCredentials", []);
+  if (awsCredentials.find((item) => item.profile === newProfile.profile)) {
+    throw new Error("Aws Profile name is already exist.");
+  }
+  const newCrendentials = [...awsCredentials, newProfile];
+  store.set("awsCredentials", newCrendentials);
+  store.set(
+    "awsProfileNames",
+    newCrendentials.map((item) => item.profile)
+  );
+};
+
+const handleUpdateProfile = async (e, args) => {
+  const updatedProfile = args[0];
+  const awsCredentials = store.get("awsCredentials", []);
+  for (const cred of awsCredentials) {
+    if (cred.profile === updatedProfile.profile) {
+      Object.assign(cred, updatedProfile);
+    }
+  }
+  store.set("awsCredentials", awsCredentials);
+};
+
+const handleDeleteProfile = async (e, args) => {
+  const profileName = args[0];
+  const awsCredentials = store.get("awsCredentials", []);
+  const newCrendentials = awsCredentials.filter(
+    (item) => item.profile !== profileName
+  );
+  store.set("awsCredentials", newCrendentials);
+  store.set(
+    "awsProfileNames",
+    newCrendentials.map((item) => item.profile)
+  );
+
+  // also remove bucket names belonged to deleted profile
+  const userSavedBuckets = store.get("buckets", []);
+  store.set(
+    "buckets",
+    userSavedBuckets.filter((item) => item.AwsProfile !== profileName)
+  );
+};
+
+const handleGetProfile = async (e, args) => {
+  const profileName = args[0];
+  return store
+    .get("awsCredentials")
+    .find((cred) => cred.profile === profileName);
 };
 
 export default (window) => {
@@ -314,4 +362,8 @@ export default (window) => {
   ipcMain.handle("aws:s3:deleteFolder", handleDeleteFolder);
   ipcMain.handle("aws:s3:putObject", handlePutObject);
   ipcMain.handle("aws:profile:list", handleListProfiles);
+  ipcMain.handle("aws:profile:add", handleAddProfile);
+  ipcMain.handle("aws:profile:update", handleUpdateProfile);
+  ipcMain.handle("aws:profile:get", handleGetProfile);
+  ipcMain.handle("aws:profile:delete", handleDeleteProfile);
 };
