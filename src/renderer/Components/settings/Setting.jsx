@@ -104,7 +104,7 @@ export default function Setting({ onChange }) {
         placement="right"
         onClose={handleSettingDrawerClose}
         open={settingDrawerOpen}
-        width="65vw"
+        width="55vw"
       >
         <Tabs defaultActiveKey="1" items={tabItems} />
       </Drawer>

@@ -1,15 +1,10 @@
-import { EditOutlined, PlusOutlined, WarningOutlined } from "@ant-design/icons";
-import { Button, Card, Space, Switch, message } from "antd";
+import { PlusOutlined, UserOutlined, WarningOutlined } from "@ant-design/icons";
+import { Button, Card, List, Space, Switch, message } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AwsProfileFormDrawer from "./AwsProfileFormDrawer";
 
 const { Meta } = Card;
-
-const gridStyle = {
-  width: "25%",
-  textAlign: "center",
-};
 
 function AwsProfile() {
   const navigate = useNavigate();
@@ -103,7 +98,6 @@ function AwsProfile() {
         />
       </Card>
       <Card
-        size="small"
         title={
           <Space>
             <span style={{ color: isProfilesFromCliCreds ? "#ccc" : "#333" }}>
@@ -130,18 +124,24 @@ function AwsProfile() {
           </Button>,
         ]}
       >
-        {awsProfileNames?.map((profile) => (
-          <Card.Grid key={profile} style={gridStyle} hoverable={false}>
-            <Space>
+        <List
+          size="small"
+          bordered
+          dataSource={awsProfileNames}
+          renderItem={(profile) => (
+            <List.Item>
               <Button
-                icon={<EditOutlined />}
-                type="link"
                 onClick={() => handleProfileEdit(profile)}
-              />
-              {profile}
-            </Space>
-          </Card.Grid>
-        ))}
+                type="link"
+                size="small"
+                icon={<UserOutlined />}
+                style={{ color: isProfilesFromCliCreds ? "#ccc" : "#1890ff" }}
+              >
+                {profile}
+              </Button>
+            </List.Item>
+          )}
+        />
       </Card>
       <AwsProfileFormDrawer
         open={profileDrawerOpen}
