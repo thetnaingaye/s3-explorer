@@ -16,7 +16,7 @@ import { app, BrowserWindow, shell } from "electron";
 
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
-import s3IpcMainHandler from "./ipc-handlers/aws";
+import awsIpcMainHandler from "./ipc-handlers/aws";
 import storeIpcMainHanlder from "./ipc-handlers/store";
 import settingIpcMainHandler from "./ipc-handlers/setting";
 
@@ -134,7 +134,7 @@ app
       if (mainWindow === null) createWindow();
     });
     storeIpcMainHanlder();
-    s3IpcMainHandler(mainWindow);
     settingIpcMainHandler();
+    awsIpcMainHandler(mainWindow);
   })
   .catch(console.log);
