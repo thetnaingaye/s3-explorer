@@ -1,7 +1,7 @@
 {
   "name": "s3-explorer",
   "description": "AWS S3 Explorer",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "main": "./src/main/main.ts",
   "scripts": {
