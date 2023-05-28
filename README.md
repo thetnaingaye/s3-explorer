@@ -22,8 +22,12 @@ Cross-Platform App (win, mac,linux) AWS S3 Explorer
 ## Screenshots
 ![AWS S3 Explorer](docs/images/dashboard.png)
 
+## App Installation
+Platform specific binaries can be downloaded from repo's release page or can be package from source.
 
-## Install
+
+## Development and Packaging
+### Install dependencies
 
 Clone the repo and install dependencies:
 
@@ -31,7 +35,7 @@ Clone the repo and install dependencies:
 npm install
 ```
 
-## Starting Development
+### Starting Development
 
 Start the app in the `dev` environment:
 
@@ -39,7 +43,7 @@ Start the app in the `dev` environment:
 npm start
 ```
 
-## Packaging for Production
+### Packaging for Production
 
 To package apps for the local platform:
 
