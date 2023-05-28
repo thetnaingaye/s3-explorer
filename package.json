@@ -2,6 +2,7 @@
   "name": "s3-explorer",
   "description": "AWS S3 Explorer",
   "version": "0.1.0",
+  "private" : true,
   "author": {
     "name": "Thet Naing Aye",
     "email": "mmu1tn@gmail.com",
@@ -217,8 +218,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "owner": "naingaye.thet",
+      "repo": "s3-explorer"
     }
   },
   "devEngines": {
