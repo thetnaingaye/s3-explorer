@@ -1,6 +1,6 @@
 import { ipcMain, app } from "electron";
 import Store from "electron-store";
-import { version } from "../../package.json";
+import { version } from "../../../package.json";
 
 export const store = new Store();
 

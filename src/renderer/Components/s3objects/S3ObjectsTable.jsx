@@ -133,23 +133,25 @@ function S3ObjectsTable({ awsProfile }) {
   };
 
   const handleDownloadObject = async (key) => {
-    const presignedUrl = await window.electron.aws.s3.getObjectPresignedUrl([
-      {
-        Bucket: bucket,
-        Key: key,
-        awsProfile,
-        bucketRegion,
-      },
-    ]);
-
-    window.electron.ipcRenderer.sendMessage("ipc-s3", [
-      "download_object",
-      {
-        filename: key.split("/").pop(),
-        presignedUrl,
-        Key: key,
-      },
-    ]);
+    try {
+      const presignedUrl = await window.electron.aws.s3.getObjectPresignedUrl([
+        {
+          Bucket: bucket,
+          Key: key,
+          awsProfile,
+          bucketRegion,
+        },
+      ]);
+      await window.electron.aws.s3.downloadObject([
+        {
+          filename: key.split("/").pop(),
+          presignedUrl,
+          Key: key,
+        },
+      ]);
+    } catch (error) {
+      messageApi.error("failed to download");
+    }
   };
 
   const handleDeleteObject = async (key) => {

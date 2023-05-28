@@ -12,31 +12,23 @@ import path from "path";
 import { app, BrowserWindow, shell } from "electron";
 // import { autoUpdater } from "electron-updater";
 // import ChildProcess from 'child_process';
-import log from "electron-log";
+// import log from "electron-log";
 
 import MenuBuilder from "./menu";
 import { resolveHtmlPath } from "./util";
-import s3IpcMainHandler from "./aws";
-import storeIpcMainHanlder from "./store";
-import settingIpcMainHandler from "./setting";
+import s3IpcMainHandler from "./ipc-handlers/aws";
+import storeIpcMainHanlder from "./ipc-handlers/store";
+import settingIpcMainHandler from "./ipc-handlers/setting";
 
-// AWS.config.getCredentials((err) => {
-//   if (err) console.log(err.stack);
-//   // credentials not loaded
-//   else {
-//     console.log("Access key:", AWS.config?.credentials?.accessKeyId);
+// class AppUpdater {
+//   constructor() {
+//     log.transports.file.level = "info";
+//     autoUpdater.logger = log;
+//     autoUpdater.checkForUpdatesAndNotify();
 //   }
-// });
+// }
 
-class AppUpdater {
-  constructor() {
-    log.transports.file.level = "info";
-    // autoUpdater.logger = log;
-    // autoUpdater.checkForUpdatesAndNotify();
-  }
-}
-
-let mainWindow = null;
+let mainWindow: BrowserWindow | null = null;
 
 if (process.env.NODE_ENV === "production") {
   const sourceMapSupport = require("source-map-support");
@@ -72,7 +64,7 @@ const createWindow = async () => {
     ? path.join(process.resourcesPath, "assets")
     : path.join(__dirname, "../../assets");
 
-  const getAssetPath = (...paths) => {
+  const getAssetPath = (...paths: string[]) => {
     return path.join(RESOURCES_PATH, ...paths);
   };
 
@@ -116,7 +108,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
+  // new AppUpdater();
 };
 
 /**

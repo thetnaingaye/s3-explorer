@@ -18,53 +18,6 @@ import { store } from "./store";
 
 let mainWindow;
 
-const setUpDownloadListener = () => {
-  const donloadListener = (e, item, webContents) => {
-    // console.log("item", item)
-    item.on("updated", () => {
-      const s3Key = decodeURI(url.parse(item.getURL()).pathname.substring(1));
-      const downloadProgress = {
-        progress: {
-          percent: item.getReceivedBytes() / item.getTotalBytes(),
-        },
-        Key: s3Key,
-      };
-      webContents.send(`download-progress-[${s3Key}]`, [downloadProgress]);
-    });
-  };
-  mainWindow.webContents.session.on("will-download", donloadListener);
-};
-
-ipcMain.on("ipc-s3", async (event, arg) => {
-  const [action, payload] = arg;
-  switch (action) {
-    case "download_object":
-      download(mainWindow, payload.presignedUrl, {
-        // saveAs: true,
-        directory: store.get("setting").download_path,
-        openFolderWhenDone:
-          store.get("setting").download_open_folder_when_done === "Y",
-      });
-      break;
-    default:
-      break;
-  }
-});
-
-// const handleGetBucketRegion = async (e, args) => {
-//   const [payload] = args;
-//   const credentials = new AWS.SharedIniFileCredentials({
-//     profile: payload.awsProfile,
-//   });
-//   const s3 = new S3Client({
-//     credentials,
-//   });
-//   const cmdBucketLocation = new GetBucketLocationCommand({
-//     Bucket: payload.bucket,
-//   });
-//   const { LocationConstraint } = await s3.send(cmdBucketLocation);
-//   return LocationConstraint;
-// };
 const getCredentials = (profile) => {
   if (store.get("setting").useCliCredentials === "Y") {
     return new AWS.SharedIniFileCredentials({
@@ -74,6 +27,11 @@ const getCredentials = (profile) => {
   return store.get("awsCredentials").find((item) => item.profile === profile);
 };
 
+/**
+ * using v2 api to get region from header,
+ * GetBucketLocationCommand won't provide region for some buckets
+ * to investiage further
+ */
 const handleGetBucketRegion = async (e, args) => {
   const [payload] = args;
   const credentials = getCredentials(payload.awsProfile);
@@ -93,6 +51,21 @@ const handleGetBucketRegion = async (e, args) => {
     region,
   };
 };
+
+// const handleGetBucketRegion = async (e, args) => {
+//   const [payload] = args;
+//   const credentials = new AWS.SharedIniFileCredentials({
+//     profile: payload.awsProfile,
+//   });
+//   const s3 = new S3Client({
+//     credentials,
+//   });
+//   const cmdBucketLocation = new GetBucketLocationCommand({
+//     Bucket: payload.bucket,
+//   });
+//   const { LocationConstraint } = await s3.send(cmdBucketLocation);
+//   return LocationConstraint;
+// };
 
 // const handleListObjects = async (e, args) => {
 //   const [payload] = args;
@@ -135,6 +108,21 @@ const handleGetBucketRegion = async (e, args) => {
 //     prefixes,
 //   };
 // };
+const handleListBuckets = async (e, args) => {
+  const [payload] = args;
+  if (!payload.awsProfile) {
+    throw new Error("invalid aws profile");
+  }
+  const credentials = getCredentials(payload.awsProfile);
+  const s3 = new S3Client({
+    credentials,
+    region: "us-east-1", // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
+  });
+
+  const command = new ListBucketsCommand({});
+  const { Buckets } = await s3.send(command);
+  return Buckets;
+};
 
 const handleListObjectsV2 = async (e, args) => {
   const [payload] = args;
@@ -189,20 +177,14 @@ const handleGetObjectPresignedUrl = async (e, args) => {
   return presignedUrl;
 };
 
-const handleListBuckets = async (e, args) => {
+const handleDownloadObject = async (e, args) => {
   const [payload] = args;
-  if (!payload.awsProfile) {
-    throw new Error("invalid aws profile");
-  }
-  const credentials = getCredentials(payload.awsProfile);
-  const s3 = new S3Client({
-    credentials,
-    region: "us-east-1", // https://stackoverflow.com/questions/52424624/list-buckets-s3api-is-not-showing-my-bucket-creation-date
-  });
-
-  const command = new ListBucketsCommand({});
-  const { Buckets } = await s3.send(command);
-  return Buckets;
+  const options = {
+    directory: store.get("setting").download_path,
+    openFolderWhenDone:
+      store.get("setting").download_open_folder_when_done === "Y",
+  };
+  await download(mainWindow, payload.presignedUrl, options);
 };
 
 const handleUploadFiles = async (e, args) => {
@@ -350,6 +332,28 @@ const handleGetProfile = async (e, args) => {
     .find((cred) => cred.profile === profileName);
 };
 
+/**
+ * setting up seperate listners due to
+ * electron-download on progress
+ * doesn't provide id of download item
+ */
+const setUpDownloadListener = () => {
+  const donloadListener = (e, item, webContents) => {
+    // console.log("item", item)
+    item.on("updated", () => {
+      const s3Key = decodeURI(url.parse(item.getURL()).pathname.substring(1));
+      const downloadProgress = {
+        progress: {
+          percent: item.getReceivedBytes() / item.getTotalBytes(),
+        },
+        Key: s3Key,
+      };
+      webContents.send(`download-progress-[${s3Key}]`, [downloadProgress]);
+    });
+  };
+  mainWindow.webContents.session.on("will-download", donloadListener);
+};
+
 export default (window) => {
   mainWindow = window;
   setUpDownloadListener();
@@ -362,6 +366,7 @@ export default (window) => {
   ipcMain.handle("aws:s3:deleteObject", handleDeleteObject);
   ipcMain.handle("aws:s3:deleteFolder", handleDeleteFolder);
   ipcMain.handle("aws:s3:putObject", handlePutObject);
+  ipcMain.handle("aws:s3:downloadObject", handleDownloadObject);
   ipcMain.handle("aws:profile:list", handleListProfiles);
   ipcMain.handle("aws:profile:add", handleAddProfile);
   ipcMain.handle("aws:profile:update", handleUpdateProfile);

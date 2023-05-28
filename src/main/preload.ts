@@ -40,6 +40,8 @@ const electronHandler = {
         ipcRenderer.invoke("aws:s3:deleteFolder", args),
       putObject: (args: unknown[]) =>
         ipcRenderer.invoke("aws:s3:putObject", args),
+      downloadObject: (args: unknown[]) =>
+        ipcRenderer.invoke("aws:s3:downloadObject", args),
     },
     profile: {
       list: (args: unknown[]) => ipcRenderer.invoke("aws:profile:list", args),
