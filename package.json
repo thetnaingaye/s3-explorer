@@ -1,14 +1,8 @@
 {
   "name": "s3-explorer",
   "description": "AWS S3 Explorer",
-  "version": "0.1.0",
-  "private" : true,
-  "author": {
-    "name": "Thet Naing Aye",
-    "email": "mmu1tn@gmail.com",
-    "url": "https://github.com/thetnaingaye/s3-explorer"
-  },
-  "license": "MIT",
+  "version": "0.0.0",
+  "private": true,
   "main": "./src/main/main.ts",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
@@ -22,7 +16,8 @@
     "start:main": "cross-env NODE_ENV=development electronmon -r ts-node/register/transpile-only .",
     "start:preload": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack --config ./.erb/configs/webpack.config.preload.dev.ts",
     "start:renderer": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true webpack serve --config ./.erb/configs/webpack.config.renderer.dev.ts",
-    "test": "jest"
+    "test": "jest",
+    "release": "release-it"
   },
   "browserslist": [],
   "prettier": {
@@ -94,6 +89,7 @@
     "@electron/notarize": "^1.2.3",
     "@electron/rebuild": "^3.2.10",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.10",
+    "@release-it/conventional-changelog": "^5.1.1",
     "@svgr/webpack": "^6.5.1",
     "@teamsupercell/typings-for-css-modules-loader": "^2.5.2",
     "@testing-library/jest-dom": "^5.16.5",
@@ -141,6 +137,7 @@
     "prettier": "^2.8.4",
     "react-refresh": "^0.14.0",
     "react-test-renderer": "^18.2.0",
+    "release-it": "^15.10.3",
     "rimraf": "^4.1.2",
     "sass": "^1.58.0",
     "sass-loader": "^13.2.0",
