@@ -2,25 +2,25 @@
 
 # **AWS S3 Explorer**
 
-Cross platforms (win, mac,linux) AWS S3 Explorer
+Cross-Platform App (win, mac,linux) AWS S3 Explorer
 
 ## Technology Stack
-
-- electron-react-boilerplate (https://github.com/electron-react-boilerplate/electron-react-boilerplate)
+- Electron React Boilerplate (https://github.com/electron-react-boilerplate/electron-react-boilerplate)
+- React v18 (https://react.dev/)
 - AWS SDK for JavaScript (https://aws.amazon.com/sdk-for-javascript/)
-- antd v5 (https://ant.design/)
+- Ant Design v5 (https://ant.design/)
 
 
 ## Features:
-- Read aws profiles from aws-cli if it is already installed in the machine
+- Support AWS creds from aws-cli if it is already installed in the machine
 - Add AWS Profile with Access Key and Secret Access Key
 - Download
   - support multiple files download
 -  Upload files / folder
-   - support multiple-part upload
+   - support multiple-part upload per file
 
 ## Screenshots
-![AWS S3 Explorer](readme/dashboard.png)
+![AWS S3 Explorer](docs/images/dashboard.png)
 
 
 ## Install
@@ -46,6 +46,6 @@ To package apps for the local platform:
 ```bash
 npm run package
 ```
-Package inaries will be output to `release/build` directory.
+Package binaries will be output to `release/build` directory.
 
 
