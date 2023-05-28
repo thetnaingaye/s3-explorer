@@ -27,7 +27,7 @@ import prettyBytes from "pretty-bytes";
 import S3Breadcrumb from "./S3Breadcrumb";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
-import S3UploadFile from "./S3UploadFile";
+import S3Upload from "./S3Upload";
 import S3DownloadBtn from "./S3DownloadBtn";
 
 function S3ObjectsTable({ awsProfile }) {
@@ -476,7 +476,7 @@ function S3ObjectsTable({ awsProfile }) {
           onClose={() => setUploadDrawerOpen(false)}
           width="55vw"
         >
-          <S3UploadFile
+          <S3Upload
             bucket={bucket}
             prefix={curPrefix}
             awsProfile={awsProfile}

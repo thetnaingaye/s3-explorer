@@ -6,6 +6,7 @@ function S3DownloadBtn({ s3Key, onClick, disabled }) {
   const [showProgress, setShowProgress] = useState(false);
   const [perc, setPerc] = useState(0);
   const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const unsubscribe = window.electron.ipcRenderer.on(
       `download-progress-[${s3Key}]`,

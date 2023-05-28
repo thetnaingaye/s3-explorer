@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 
 const { Dragger } = Upload;
 
-function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
+function S3Upload({ awsProfile, bucket, prefix, onUploadComplete }) {
   const [fileList, setFileList] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [uploadType, setUploadType] = useState("files");
@@ -197,4 +197,4 @@ function S3UploadFile({ awsProfile, bucket, prefix, onUploadComplete }) {
   );
 }
 
-export default S3UploadFile;
+export default S3Upload;

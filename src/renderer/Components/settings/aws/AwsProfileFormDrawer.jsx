@@ -1,4 +1,14 @@
-import { Button, Drawer, Input, Space, Form, Row, Col, Collapse } from "antd";
+import {
+  Button,
+  Drawer,
+  Input,
+  Space,
+  Form,
+  Row,
+  Col,
+  Collapse,
+  Card,
+} from "antd";
 import { useEffect, useState } from "react";
 
 const { Panel } = Collapse;
@@ -13,8 +23,10 @@ function AwsProfileFormDrawer({
   const [form] = Form.useForm();
   const [removeConfrimText, setRemoveConfrimText] = useState("");
   useEffect(() => {
-    form.resetFields();
-  }, [form, editProfile]);
+    if (open) {
+      form.resetFields();
+    }
+  }, [open, form, editProfile]);
 
   const handleDrawerClose = () => {
     form.resetFields();
@@ -38,70 +50,78 @@ function AwsProfileFormDrawer({
       placement="right"
       onClose={handleDrawerClose}
       open={open}
-      width="40vw"
+      width="42vw"
       destroyOnClose
+      style={{ background: "#fafafa" }}
       extra={
         <Space>
           <Button onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} type="primary">
-            {editProfile ? "Update" : "Submit"}
+            {editProfile ? "Update" : "Create"}
           </Button>
         </Space>
       }
     >
-      <Form layout="vertical" form={form} initialValues={editProfile}>
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="profile"
-              label="Profile Name"
-              rules={[
-                {
-                  required: true,
-                  message: "Please enter profile name",
-                },
-              ]}
-            >
-              <Input
-                placeholder="Please enter profile name"
-                disabled={editProfile}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="accessKeyId"
-              label="Access Key Id"
-              rules={[
-                {
-                  required: true,
-                  message: "Please enter access key id",
-                },
-              ]}
-            >
-              <Input placeholder="Please enter access key id" />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Row gutter={16}>
-          <Col span={24}>
-            <Form.Item
-              name="secretAccessKey"
-              label="Secret Access Key"
-              rules={[
-                {
-                  required: true,
-                  message: "Please enter secret access key",
-                },
-              ]}
-            >
-              <Input placeholder="Please enter secret access key" />
-            </Form.Item>
-          </Col>
-        </Row>
-      </Form>
+      <Card>
+        <Form
+          layout="vertical"
+          form={form}
+          initialValues={editProfile}
+          hideRequiredMark
+        >
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="profile"
+                label="Profile Name"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter profile name",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="Please enter profile name"
+                  disabled={editProfile}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="accessKeyId"
+                label="Access Key Id"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter access key id",
+                  },
+                ]}
+              >
+                <Input placeholder="Please enter access key id" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
+                name="secretAccessKey"
+                label="Secret Access Key"
+                rules={[
+                  {
+                    required: true,
+                    message: "Please enter secret access key",
+                  },
+                ]}
+              >
+                <Input.Password placeholder="Please enter secret access key" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
       {editProfile && (
         <Collapse defaultActiveKey={["0"]} style={{ marginTop: 20 }}>
           <Panel

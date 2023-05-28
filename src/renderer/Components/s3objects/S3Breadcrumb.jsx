@@ -29,7 +29,7 @@ function BreadcrumbKey({ s3Prefix, onChange, bucket }) {
       const isLast = idx === splitPaths.length - 2;
       if (isLast) {
         breadcrumbItems.push({
-          title: <strong>{item}</strong>,
+          title: <strong style={{ color: "#333" }}>{item}</strong>,
         });
       } else {
         breadcrumbItems.push({

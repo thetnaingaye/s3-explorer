@@ -1,8 +1,4 @@
-import {
-  EditOutlined,
-  SettingOutlined,
-  UsergroupAddOutlined,
-} from "@ant-design/icons";
+import { EditOutlined, SettingOutlined, TeamOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Drawer, List, Tabs } from "antd";
 import { useEffect, useState } from "react";
 import AwsProfile from "./aws/AwsProfile";
@@ -91,7 +87,7 @@ export default function Setting({ onChange }) {
       key: "2",
       label: (
         <span>
-          <UsergroupAddOutlined />
+          <TeamOutlined />
           User Profiles
         </span>
       ),

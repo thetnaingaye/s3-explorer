@@ -1,4 +1,4 @@
-import { EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { EditOutlined, PlusOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, Space, Switch, message } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -94,17 +94,28 @@ function AwsProfile() {
               onChange={handleUseCliCredsOptionChange}
             />
           }
-          title="Use aws profiles from aws-cli"
-          description="If enabled, profiles will be loaded from aws config file instead of below user configured accounts"
+          title={
+            <span style={{ fontSize: "95%" }}>
+              Use aws profiles from shared config file
+            </span>
+          }
+          description="If enabled, profiles will be loaded from aws config file instead of below user configured accounts. This can be used if aws-cli is installed and credentials are already set up in the system."
         />
       </Card>
       <Card
         size="small"
         title={
-          <span style={{ color: isProfilesFromCliCreds ? "#ccc" : "#333" }}>
-            Profiles
-            {isProfilesFromCliCreds && <span> (not in use)</span>}
-          </span>
+          <Space>
+            <span style={{ color: isProfilesFromCliCreds ? "#ccc" : "#333" }}>
+              Profiles
+            </span>
+            {isProfilesFromCliCreds && (
+              <span style={{ color: "red" }}>
+                {" "}
+                <WarningOutlined /> not in use
+              </span>
+            )}
+          </Space>
         }
         style={{ color: isProfilesFromCliCreds ? "#ccc" : "#333" }}
         extra={[
@@ -115,7 +126,7 @@ function AwsProfile() {
             size="small"
             onClick={() => setProfileDrawerOpen(true)}
           >
-            New aws profile
+            New Aws Profile
           </Button>,
         ]}
       >

@@ -59,7 +59,6 @@ const getColumnSearchProps = (dataIndex, onfilter) => ({
     />
   ),
   onFilter: (value, record) => {
-    console.log("on filter", value, dataIndex, record, onfilter);
     if (!onfilter) {
       return record[dataIndex]
         ? record[dataIndex]
@@ -71,7 +70,7 @@ const getColumnSearchProps = (dataIndex, onfilter) => ({
 
     return onfilter(value, record);
   },
-  onFilterDropdownVisibleChange: (visible) => {
+  onFilterDropdownOpenChange: (visible) => {
     if (visible) {
       setTimeout(() => searchInput.select());
     }

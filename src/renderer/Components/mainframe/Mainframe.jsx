@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import { message } from "antd";
+import { message, Layout } from "antd";
 import Header from "./Header";
-import S3BucketsTable from "../s3buckets/S3BucketsTable";
-import S3BucketsTableUser from "../s3buckets/S3BucketsTableUser";
-import S3ObjectsTable from "../s3objects/S3ObjectsTable";
 import Dashboard from "../dashboard/Dashboard";
+import S3BucketsTable from "../s3buckets/S3BucketsTable";
+import S3UserBuckets from "../s3buckets/S3UserBuckets";
+import S3ObjectsTable from "../s3objects/S3ObjectsTable";
+
+const { Content } = Layout;
 
 export default function Mainframe() {
-  const [messageApi, contextHolder] = message.useMessage();
   const [awsProfiles, setAwsProfiles] = useState([]);
-  const [curAwsProfile, setCurAwsProfile] = useState("");
+  const [awsProfile, setAwsProfile] = useState("");
   const [loading, setLoading] = useState(false);
 
   const listProfiles = useCallback(async () => {
@@ -19,61 +20,56 @@ export default function Mainframe() {
       const profiles = await window.electron.aws.profile.list();
       if (profiles?.length) {
         setAwsProfiles(profiles);
-        setCurAwsProfile(profiles[0]);
+        setAwsProfile(profiles[0]);
       } else {
-        setCurAwsProfile("");
-        messageApi.warning(
-          "AWS Profile has not configured. Please add profile to start using application."
+        setAwsProfile("");
+        message.warning(
+          "AWS profile has not configured. Please add profile to start using application."
         );
       }
       setLoading(false);
     } catch (error) {
-      messageApi.error(error?.message);
+      message.error(error?.message);
       setLoading(false);
     }
-  }, [messageApi]);
+  }, []);
 
   useEffect(() => {
     listProfiles();
   }, [listProfiles]);
 
   return (
-    <>
-      {contextHolder}
+    <Layout>
       <Header
-        curAwsProfile={curAwsProfile}
+        awsProfile={awsProfile}
         awsProfiles={awsProfiles}
         onSettingChange={listProfiles}
-        onProfileChange={setCurAwsProfile}
+        onProfileChange={setAwsProfile}
         loading={loading}
       />
-      <Routes>
-        <Route
-          exact
-          path="/"
-          element={<Dashboard awsProfile={curAwsProfile} />}
-        />
-        <Route
-          exact
-          path="/buckets"
-          element={<S3BucketsTable awsProfile={curAwsProfile} />}
-        />
-        <Route
-          exact
-          path="/buckets/user"
-          element={
-            <S3BucketsTableUser
-              awsProfile={curAwsProfile}
-              awsProfiles={awsProfiles}
-              onProfileChange={setCurAwsProfile}
-            />
-          }
-        />
-        <Route
-          path="/objects/:bucket/:prefix?"
-          element={<S3ObjectsTable awsProfile={curAwsProfile} />}
-        />
-      </Routes>
-    </>
+      <Content>
+        <Routes>
+          <Route
+            exact
+            path="/"
+            element={<Dashboard awsProfile={awsProfile} />}
+          />
+          <Route
+            exact
+            path="/buckets"
+            element={<S3BucketsTable awsProfile={awsProfile} />}
+          />
+          <Route
+            exact
+            path="/buckets/user"
+            element={<S3UserBuckets awsProfile={awsProfile} />}
+          />
+          <Route
+            path="/objects/:bucket/:prefix?"
+            element={<S3ObjectsTable awsProfile={awsProfile} />}
+          />
+        </Routes>
+      </Content>
+    </Layout>
   );
 }

@@ -1,28 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button, Card, Table, Divider, message, Spin, Space } from "antd";
-import Icon, {
-  HomeFilled,
-  LoadingOutlined,
-  RollbackOutlined,
-  SyncOutlined,
-} from "@ant-design/icons";
+import { Link } from "react-router-dom";
+import { Card, Table, message, Spin, Space } from "antd";
+import Icon, { LoadingOutlined } from "@ant-design/icons";
 import getColumnSearchProps from "../common/getColumnSearchProps";
 import { ReactComponent as BucketIcon } from "../images/bucket.svg";
+import MenuExtra from "./MenuExtra";
 
 function BucketsTable({ awsProfile }) {
-  const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const [buckets, setBuckets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refresh, setRefresh] = useState(false);
 
   const listBuckets = useCallback(async () => {
-    const data = await window.electron.aws.s3.listBuckets([
-      {
-        awsProfile,
-      },
-    ]);
+    const data = await window.electron.aws.s3.listBuckets([{ awsProfile }]);
     return data;
   }, [awsProfile]);
 
@@ -128,20 +119,11 @@ function BucketsTable({ awsProfile }) {
           </Space>
         }
         extra={[
-          <Button key="home" onClick={() => navigate("/")}>
-            <HomeFilled />
-            Home
-          </Button>,
-          <Divider key="d1" type="vertical" />,
-          <Button key="back" onClick={() => navigate(-1)}>
-            <RollbackOutlined />
-            Back
-          </Button>,
-          <Divider key="d2" type="vertical" />,
-          <Button onClick={() => setRefresh(true)} key="refresh">
-            <SyncOutlined spin={loading} />
-            Refresh
-          </Button>,
+          <MenuExtra
+            onRefresh={() => setRefresh(true)}
+            loading={loading}
+            key="menu"
+          />,
         ]}
       >
         <Table
